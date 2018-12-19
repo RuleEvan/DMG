@@ -15,7 +15,7 @@ void two_body_density(int j_op, int t_op) {
   char orbit_file[] = "GCN2850.sps";
   wfnData *wd = read_binary_wfn_data(wfn_file_initial, wfn_file_final, basis_file_initial, basis_file_final, orbit_file);
 //  wfnData *wd = read_wfn_data(wfn_file_initial, wfn_file_final, orbit_file);
-  float* j_store = (float*) malloc(sizeof(float)*4);
+  float* j_store = (float*) malloc(sizeof(float)*4); // Array to hold density matrix elements for various coupled two-particle state
 
   int ns = wd->n_shells;
 
@@ -104,7 +104,6 @@ void two_body_density(int j_op, int t_op) {
       cg_j *= pow(-1.0, jf - ji)/sqrt(2*jf + 1);
       cg_t *= pow(-1.0, tf - ti)/sqrt(2*tf + 1);
       printf("Initial state: #%d J: %g T: %g MT: %g Final State: #%d J: %g T: %g MT: %g\n", psi_i + 1, ji, ti, mti, psi_f + 1, jf, tf, mtf);
-      float mat_test = 0.0;
       // Loop over orbital a
       for (int i_orb1 = 0; i_orb1 < wd->n_orbits; i_orb1++) {
         float j1 = wd->j_orb[i_orb1];
@@ -281,78 +280,81 @@ void two_body_density(int j_op, int t_op) {
 float trace_a4_nodes(int a, int b, int c, int d, int num_mj, int n_sds_int2, int* p2_array_f, sd_list** p2_list_i, wf_list** n0_list_i, wfnData* wd, int psi_i, int psi_f, int i_op) {
   float total = 0.0;
   int ns = wd->n_shells;
-  for (int imj = 0; imj < num_mj; imj++) {
-    sd_list* node1 = p2_list_i[imj + num_mj*(c + d*ns)];
-    while (node1 != NULL) {
-      unsigned int ppn = node1->pn;
-      unsigned int ppi = node1->pi;
-      int phase1 = node1->phase;
-      int ppf = p2_array_f[(ppn - 1) + n_sds_int2*(a + ns*b)];
-      if (ppf == 0) {node1 = node1->next; continue;}
-      int phase2 = 1;
-      node1 = node1->next;
-      if (ppf < 0) {
-        ppf *= -1;
-        phase2 = -1;
-      }
-      wf_list* node2 = n0_list_i[num_mj - imj - 1];
-      while (node2 != NULL) {
-        int pn = node2->p;
-        int index_i = -1;
-        int index_f = -1;
 
-        if (i_op == 0) {
-          unsigned int p_hash_i = ppi + wd->n_sds_p_i*(pn % HASH_SIZE);
-          wh_list* node3 = wd->wh_hash_i[p_hash_i];
-          while (node3 != NULL) {
-            if ((pn == node3->pn) && (ppi == node3->pp)) {
-              index_i = node3->index;
-              break;
-            }
-            node3 = node3->next;
-          }
-          if (index_i < 0) {node2 = node2->next; continue;}
+  for (int ipar = 0; ipar <= 1; ipar++) {
+    for (int imj = 0; imj < num_mj; imj++) {
+      sd_list* node1 = p2_list_i[ipar + 2*(imj + num_mj*(c + d*ns))];
+      while (node1 != NULL) {
+        unsigned int ppn = node1->pn;
+        unsigned int ppi = node1->pi;
+        int phase1 = node1->phase;
+        int ppf = p2_array_f[(ppn - 1) + n_sds_int2*(a + ns*b)];
+        if (ppf == 0) {node1 = node1->next; continue;}
+        int phase2 = 1;
+        node1 = node1->next;
+        if (ppf < 0) {
+          ppf *= -1;
+          phase2 = -1;
+        }
+        wf_list* node2 = n0_list_i[ipar + 2*(num_mj - imj - 1)];
+        while (node2 != NULL) {
+          int pn = node2->p;
+          int index_i = -1;
+          int index_f = -1;
 
-          unsigned int p_hash_f = ppf + wd->n_sds_p_f*(pn % HASH_SIZE);
-          node3 = wd->wh_hash_f[p_hash_f];
-          while (node3 != NULL) {
-            if ((pn == node3->pn) && (ppf == node3->pp)) {
-              index_f = node3->index;
-              break;
+          if (i_op == 0) {
+            unsigned int p_hash_i = ppi + wd->n_sds_p_i*(pn % HASH_SIZE);
+            wh_list* node3 = wd->wh_hash_i[p_hash_i];
+            while (node3 != NULL) {
+              if ((pn == node3->pn) && (ppi == node3->pp)) {
+                index_i = node3->index;
+                break;
+              }
+              node3 = node3->next;
             }
-            node3 = node3->next;
-          }
-          if (index_f < 0) {node2 = node2->next; continue;}
-          total += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
-         } else {
-          unsigned int p_hash_i = pn + wd->n_sds_p_i*(ppi % HASH_SIZE);
-          wh_list* node3 = wd->wh_hash_i[p_hash_i];
-          while (node3 != NULL) {
-            if ((pn == node3->pp) && (ppi == node3->pn)) {
-              index_i = node3->index;
-              break;
-            }
-            node3 = node3->next;
-          }
-          if (index_i < 0) {node2 = node2->next; continue;}
+            if (index_i < 0) {node2 = node2->next; continue;}
 
-          unsigned int p_hash_f = pn + wd->n_sds_p_f*(ppf % HASH_SIZE);
-          node3 = wd->wh_hash_f[p_hash_f];
-          while (node3 != NULL) {
-            if ((pn == node3->pp) && (ppf == node3->pn)) {
-              index_f = node3->index;
-              break;
+            unsigned int p_hash_f = ppf + wd->n_sds_p_f*(pn % HASH_SIZE);
+            node3 = wd->wh_hash_f[p_hash_f];
+            while (node3 != NULL) {
+              if ((pn == node3->pn) && (ppf == node3->pp)) {
+                index_f = node3->index;
+                break;
+              }
+              node3 = node3->next;
             }
-            node3 = node3->next;
-          }
-          if (index_f < 0) {node2 = node2->next; continue;}
-          total += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
+            if (index_f < 0) {node2 = node2->next; continue;}
+            total += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
+           } else {
+            unsigned int p_hash_i = pn + wd->n_sds_p_i*(ppi % HASH_SIZE);
+            wh_list* node3 = wd->wh_hash_i[p_hash_i];
+            while (node3 != NULL) {
+              if ((pn == node3->pp) && (ppi == node3->pn)) {
+                index_i = node3->index;
+                break;
+              }
+              node3 = node3->next;
+            }
+            if (index_i < 0) {node2 = node2->next; continue;}
 
+            unsigned int p_hash_f = pn + wd->n_sds_p_f*(ppf % HASH_SIZE);
+            node3 = wd->wh_hash_f[p_hash_f];
+            while (node3 != NULL) {
+              if ((pn == node3->pp) && (ppf == node3->pn)) {
+                index_f = node3->index;
+                break;
+              }
+              node3 = node3->next;
+            }
+            if (index_f < 0) {node2 = node2->next; continue;}
+            total += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
+
+          } 
+          node2 = node2->next;
         } 
-        node2 = node2->next;
       }
     }
-  }
+   }
   return total;
 }
 
@@ -403,13 +405,12 @@ float trace_a22_nodes(int a, int b, int c, int d, int num_mj, sd_list** a2_list_
          //     n_hash++;
               if ((pnf == node3->pn) && (ppf == node3->pp)) {
                 index_f = node3->index;
+                total += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
                 break;
               }
               node3 = node3->next;
             }
         //    printf("n_hash_f: %d\n", n_hash);
-            if (index_f < 0) {node2 = node2->next; /*printf("Not found\n");*/ continue;}
-            total += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
            } else {
             unsigned int p_hash_i = pni + wd->n_sds_p_i*(ppi % HASH_SIZE);
             unsigned int p_hash_f = pnf + wd->n_sds_p_f*(ppf % HASH_SIZE);
@@ -434,13 +435,12 @@ float trace_a22_nodes(int a, int b, int c, int d, int num_mj, sd_list** a2_list_
      //         n_hash++;
               if ((pnf == node3->pp) && (ppf == node3->pn)) {
                 index_f = node3->index;
+                total += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
                 break;
               }
               node3 = node3->next;
             }
      //       printf("N_hash_f: %d\n", n_hash);
-            if (index_f < 0) {node2 = node2->next; printf("Not found f: %u\n", p_hash_f); continue;}
-            total += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
 
           }
           node2 = node2->next;
@@ -456,60 +456,62 @@ float trace_a20_nodes(int a, int b, int c, int d, int num_mj, int n_sds_p_int1, 
 
   float total = 0.0;
   int ns = wd->n_shells;
-  for (int imj = 0; imj < num_mj; imj++) {
-    sd_list* node_pi = p1_list_i[imj + num_mj*b]; // Get proton states resulting from p_b |p_i>
-    while (node_pi != NULL) {
-      int ppi = node_pi->pi; 
-      int ppn = node_pi->pn; // Get pn = p_a |p_i>
-      int phase1 = node_pi->phase;
-      int phase2 = 1;
-      int ppf = p1_array_f[(ppn - 1) + n_sds_p_int1*a]; // Get pf such that pn = p_a |p_f>
-      if (ppf == 0) {node_pi = node_pi->next; continue;}
-      if (ppf < 0) {
-        ppf *= -1;
-        phase2 = -1;
-      }
-      sd_list* node_ni = n1_list_i[num_mj - imj + num_mj*d]; // Get neutron states resulting from n_d |n_i>
-      while (node_ni != NULL) {
-        int pni = node_ni->pi;
-        int pnn = node_ni->pn; // Get nn = n_d |n_i>
-        int phase3 = node_ni->phase;
-        int phase4 = 1;
-        int pnf = n1_array_f[(pnn - 1) + n_sds_n_int1*c];
-        if (pnf == 0) {node_ni = node_ni->next; continue;}
-        if (pnf < 0) {
-          pnf *= -1;
-          phase4 = -1;
+  for (int ipar = 0; ipar <= 1; ipar++) {
+    for (int imj = 0; imj < num_mj; imj++) {
+      sd_list* node_pi = p1_list_i[ipar + 2*(imj + num_mj*b)]; // Get proton states resulting from p_b |p_i>
+      while (node_pi != NULL) {
+        int ppi = node_pi->pi; 
+        int ppn = node_pi->pn; // Get pn = p_a |p_i>
+        int phase1 = node_pi->phase;
+        int phase2 = 1;
+        int ppf = p1_array_f[(ppn - 1) + n_sds_p_int1*a]; // Get pf such that pn = p_a |p_f>
+        if (ppf == 0) {node_pi = node_pi->next; continue;}
+        if (ppf < 0) {
+          ppf *= -1;
+          phase2 = -1;
         }
-        unsigned int p_hash_i = ppi + wd->n_sds_p_i*(pni % HASH_SIZE);
-        unsigned int p_hash_f = ppf + wd->n_sds_p_f*(pnf % HASH_SIZE);
-        wh_list *node3 = wd->wh_hash_i[p_hash_i]; // hash corresponds to a_op operators
+        sd_list* node_ni = n1_list_i[ipar + 2*(num_mj - imj - 1 + num_mj*d)]; // Get neutron states resulting from n_d |n_i>
+        while (node_ni != NULL) {
+          int pni = node_ni->pi;
+          int pnn = node_ni->pn; // Get nn = n_d |n_i>
+          int phase3 = node_ni->phase;
+          int phase4 = 1;
+          int pnf = n1_array_f[(pnn - 1) + n_sds_n_int1*c];
+          if (pnf == 0) {node_ni = node_ni->next; continue;}
+          if (pnf < 0) {
+            pnf *= -1;
+            phase4 = -1;
+          }
+          unsigned int p_hash_i = ppi + wd->n_sds_p_i*(pni % HASH_SIZE);
+          unsigned int p_hash_f = ppf + wd->n_sds_p_f*(pnf % HASH_SIZE);
+          wh_list *node3 = wd->wh_hash_i[p_hash_i]; // hash corresponds to a_op operators
    
-        int index_i = -1;
-        int index_f = -1;
-        while (node3 != NULL) {
-          if ((pni == node3->pn) && (ppi == node3->pp)) {
-            index_i = node3->index;
-            break;
+          int index_i = -1;
+          int index_f = -1;
+          while (node3 != NULL) {
+            if ((pni == node3->pn) && (ppi == node3->pp)) {
+              index_i = node3->index;
+              break;
+            }
+            node3 = node3->next;
           }
-          node3 = node3->next;
-        }
-        if (index_i < 0) {node_ni = node_ni->next; continue;}
-        node3 = wd->wh_hash_f[p_hash_f];
-        while (node3 != NULL) {
-          if ((pnf == node3->pn) && (ppf == node3->pp)) {
-            index_f = node3->index;
-            break;
+          if (index_i < 0) {node_ni = node_ni->next; continue;}
+          node3 = wd->wh_hash_f[p_hash_f];
+          while (node3 != NULL) {
+            if ((pnf == node3->pn) && (ppf == node3->pp)) {
+              index_f = node3->index;
+              break;
+            }
+            node3 = node3->next;
           }
-          node3 = node3->next;
+          if (index_f < 0) {node_ni = node_ni->next; continue;}
+          total += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2*phase3*phase4;
+          node_ni = node_ni->next;
         }
-        if (index_f < 0) {node_ni = node_ni->next; continue;}
-        total += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2*phase3*phase4;
-        node_ni = node_ni->next;
+        node_pi = node_pi->next;
       }
-      node_pi = node_pi->next;
-    }
-  }  
+    } 
+  } 
   return total;
 }
 

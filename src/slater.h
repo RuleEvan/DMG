@@ -7,6 +7,7 @@ void orbitals_from_p(unsigned int p, int n_s, int n_p, int* orbitals);
 void generate_single_particle_states();
 unsigned int bin_from_p(int n_s, int n_p, unsigned int p);
 float m_from_p(unsigned int p, int n_s, int n_p, int* m_shell);
+int parity_from_p(unsigned int p, int n_s, int n_p, int* l_shell);
 unsigned int a_op(int n_s, int n_p, unsigned int p, int n_op, int* phase, int j_min);
 unsigned int a_dag_op(int n_s, int n_p, unsigned int p, int n_op, int* phase);
 unsigned int a_dag_a_op(int n_s, int n_p, unsigned int p, int n_a, int n_b, int* phase);

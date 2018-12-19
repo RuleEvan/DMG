@@ -104,8 +104,15 @@ unsigned int a_op(int n_s, int n_p, unsigned int p, int n_op, int *phase, int j_
 
 unsigned int get_num_sds(int n_s, int n_p) {
   /* Given the number of single-particle states and number of particles, computes the number of possible SDs
+     
+  Input(s):
+    int n_s: number of single-particle states
+    int n_p: number of particles
 
+  Output(s):
+    unsigned int n_sds: number of Slater determinants
 */
+
   unsigned int n_sds = 1;
   if (n_p <= 0) {return 1;}
   int* max_state = (int*) malloc(sizeof(int)*n_p);
@@ -119,7 +126,18 @@ unsigned int get_num_sds(int n_s, int n_p) {
 }
 
 int parity_from_p(unsigned int p, int n_s, int n_p, int* l_shell) {
-  
+/* Computes the parity eigenvalue +/- of a given SD p
+
+  Input(s):
+    unsigned int p: Slater determinant
+    int n_s: number of single-particle states
+    int n_p: number of particles
+    int* l_shell: array of orbital angular momentum l values for each single-particle state
+
+  Output(s):
+    int pi_tot: total parity of the given SD
+*/
+
   unsigned int q = n_choose_k(n_s, n_p) - p;
   int j_min = 1;
   int pi_tot = 1;
@@ -170,6 +188,17 @@ float m_from_p(unsigned int p, int n_s, int n_p, int* m_shell) {
 }
 
 int max_mj(int n_s, int n_p, int *m_shell) {
+  /* Computes the maximum mj value of all SDs in the given basis
+  
+  Input(s):
+    int n_s: number of single-particle states
+    int n_p: number of particles
+    int* m_shell: array of mj values for each single-particle state
+
+  Outputs():
+    int max_mj: maximum mj in the basis
+*/
+   
   int *found = (int*) calloc(n_s, sizeof(int));
   int max_j = 0;
   for (int i = 0; i < n_p; i++) {
@@ -189,6 +218,17 @@ int max_mj(int n_s, int n_p, int *m_shell) {
 }
 
 int min_mj(int n_s, int n_p, int *m_shell) {
+  /* Computes the minimum mj value of all SDs in the given basis
+  
+  Input(s):
+    int n_s: number of single-particle states
+    int n_p: number of particles
+    int* m_shell: array of mj values for each single-particle state
+
+  Outputs():
+    int min_mj: minimum mj in the basis
+*/
+
   int *found = (int*) calloc(n_s, sizeof(int));
   int min_j = 0;
   for (int i = 0; i < n_p; i++) {
@@ -206,6 +246,45 @@ int min_mj(int n_s, int n_p, int *m_shell) {
 
   return min_j;
 }
+
+int j_min_from_p(int n_s, int n_p, unsigned int p) {
+/* Returns the label of the first occupited orbital
+   Uses the standard Whitehead algorithm for reconstructing occupied states from p-coefficient
+
+  Input(s):
+    int n_s: number of single-particle states
+    int n_p: number of particles
+    unsigned int p: SD p-coefficient
+
+  Output(s):
+    int j_min: label of first occupied orbital
+
+*/
+
+  unsigned int q = n_choose_k(n_s, n_p) - p;
+  
+  for (int j = 1; j <= n_s; j++) {
+    if ((q >= n_choose_k(n_s - j, n_p)) && (q < n_choose_k(n_s - (j - 1), n_p))) {
+      return j;
+    }
+  }
+
+  return 0;
+}
+
+unsigned int n_choose_k(int n, int k) {
+/* Wrapper to gsl code to compute binomial coefficient
+   Provides zero result when n < k (required for Whitehead algorithms)
+*/
+
+  unsigned int c = 0;
+  if (k > n) {return c;}
+  c = gsl_sf_choose(n, k);
+
+  return c;
+}
+
+/* **** Deprecated code ****
 
 void orbitals_from_binary(int n_s, int n_p, unsigned int b, int* orbitals) {
   // Computes the orbital of each particle from the corresponding
@@ -279,45 +358,6 @@ unsigned int bin_phase_from_p(int n_s, int n_p, unsigned int p, int n_op, int* p
   return bin;
 }
 
-int j_min_from_p(int n_s, int n_p, unsigned int p) {
-/* Returns the label of the first occupited orbital
-   Uses the standard Whitehead algorithm for reconstructing occupied states from p-coefficient
-
-  Input(s):
-    int n_s: number of single-particle states
-    int n_p: number of particles
-    unsigned int p: SD p-coefficient
-
-  Output(s):
-    int j_min: label of first occupied orbital
-
-*/
-
-  unsigned int q = n_choose_k(n_s, n_p) - p;
-  
-  for (int j = 1; j <= n_s; j++) {
-    if ((q >= n_choose_k(n_s - j, n_p)) && (q < n_choose_k(n_s - (j - 1), n_p))) {
-      return j;
-    }
-  }
-
-  return 0;
-}
-
-unsigned int n_choose_k(int n, int k) {
-/* Wrapper to gsl code to compute binomial coefficient
-   Provides zero result when n < k (required for Whitehead algorithms)
-*/
-
-  unsigned int c = 0;
-  if (k > n) {return c;}
-  c = gsl_sf_choose(n, k);
-
-  return c;
-}
-
-
-/* **** Deprecated code ****
 
 unsigned int a_dag_op(int n_s, int n_p, unsigned int p, int n_op, int *phase) {
   // Acts a creation operator on the orbital in position n_op

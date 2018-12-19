@@ -161,7 +161,6 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
         in++;
       }
     }
-    if ((p_orbitals[0] == 1) && (p_orbitals[1] == 10) && (p_orbitals[2] == 18) && (p_orbitals[3] == 21) && (n_orbitals[0] == 7) && (n_orbitals[1] == 9) && (n_orbitals[2] == 18) && (n_orbitals[3] == 20)) {exit(0);} 
     unsigned int pp = p_step(wd->n_shells, wd->n_proton_i, p_orbitals);
     unsigned int pn = p_step(wd->n_shells, wd->n_neutron_i, n_orbitals);
     unsigned int p_hash = pp + wd->n_sds_p_i*(pn % HASH_SIZE);
