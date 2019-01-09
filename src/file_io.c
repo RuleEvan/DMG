@@ -387,7 +387,6 @@ wfnData* read_wfn_data(char *wfn_file_initial, char *wfn_file_final, char *orbit
       wd->j_nuc_i[i] -= 0.5;
       wd->t_nuc_i[i] -= 0.5;
     }
-
     fgets(buffer, 100, in_file);
   }
   wd->n_shell = (int*) malloc(sizeof(int)*wd->n_shells);
@@ -408,7 +407,7 @@ wfnData* read_wfn_data(char *wfn_file_initial, char *wfn_file_final, char *orbit
   }
 
   printf("Reading in initial state wavefunction coefficients\n");
-  wd->wh_hash_i = (wh_list**) calloc(HASH_SIZE, sizeof(wh_list*));
+  wd->wh_hash_i = (wh_list**) calloc(wd->n_sds_p_i*HASH_SIZE, sizeof(wh_list*));
   wd->bc_i = malloc(sizeof(float)*wd->n_states_i*wd->n_eig_i);
   int *p_orbitals = (int*) malloc(sizeof(int)*wd->n_proton_i);
   int *n_orbitals = (int*) malloc(sizeof(int)*wd->n_neutron_i);
@@ -509,7 +508,7 @@ wfnData* read_wfn_data(char *wfn_file_initial, char *wfn_file_final, char *orbit
     for (int i = 0; i < 2*wd->n_shells; i++) {
       fscanf(in_file, "%*d %*d %*d %*d %*d %*d\n");
     }
-    wd->wh_hash_f = (wh_list**) calloc(HASH_SIZE, sizeof(wh_list*));
+    wd->wh_hash_f = (wh_list**) calloc(wd->n_sds_p_f*HASH_SIZE, sizeof(wh_list*));
     p_orbitals = (int*) malloc(sizeof(int)*wd->n_proton_f);
     n_orbitals = (int*) malloc(sizeof(int)*wd->n_neutron_f);
     wd->bc_f = malloc(sizeof(float)*wd->n_states_f*wd->n_eig_f);

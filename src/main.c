@@ -1,7 +1,7 @@
 #include "density.h"
 
 int main(int argc, char *argv[]) {
-  two_body_density(0, 2);
+  one_body_density(2, 1);
   
   return 0;
 }
