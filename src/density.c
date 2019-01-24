@@ -8,11 +8,11 @@
 void two_body_density(int j_op, int t_op) {
 
   // Read in data 
-  char wfn_file_initial[] = "ne20_basis.wfn";
-  char wfn_file_final[] = "mg20_basis.wfn";
-  char basis_file_initial[] = "ne20_basis.bas";
-  char basis_file_final[] = "mg20_basis.bas";
-  char orbit_file[] = "sd.sps";
+  char wfn_file_initial[] = "ge76_gcn2850.wfn";
+  char wfn_file_final[] = "ge76_gcn2850.wfn";
+  char basis_file_initial[] = "ge76_basis.bas";
+  char basis_file_final[] = "ge76_basis.bas";
+  char orbit_file[] = "GCN2850.sps";
   wfnData *wd = read_binary_wfn_data(wfn_file_initial, wfn_file_final, basis_file_initial, basis_file_final, orbit_file);
 //  wfnData *wd = read_wfn_data(wfn_file_initial, wfn_file_final, orbit_file);
   float* j_store = (float*) malloc(sizeof(float)*4); // Array to hold density matrix elements for various coupled two-particle state
@@ -82,7 +82,7 @@ void two_body_density(int j_op, int t_op) {
 
   FILE *out_file;
   out_file = fopen("ne-mg_fermi_density", "w"); 
-  for (int psi_i = 75; psi_i < 76; psi_i++) {
+  for (int psi_i = 0; psi_i < 1; psi_i++) {
     float ji = wd->j_nuc_i[psi_i];
     float ti = wd->t_nuc_i[psi_i];
     // Many-body states do not have mt = 0
@@ -285,13 +285,15 @@ void one_body_density(int j_op, int t_op) {
   // for each initial and final state eigenfunction
   // Initial and final wave functions must share the same orbit file
   // J_op and T_op are the total spin and isospin of the operator
-  wfnData *wd;
-  char wfn_file_initial[] = "ne20_basis.trwfn";
-  char wfn_file_final[] = "ne20_basis.trwfn";
-  char orbit_file[] = "sd.sps";
-  wd = read_wfn_data(wfn_file_initial, wfn_file_final, orbit_file);
+  char wfn_file_initial[] = "ge64_basis.wfn";
+  char wfn_file_final[] = "ge64_basis.wfn";
+  char basis_file_initial[] = "ge64_basis.bas";
+  char basis_file_final[] = "ge64_basis.bas";
+  char orbit_file[] = "GCN2850.sps";
+  wfnData *wd = read_binary_wfn_data(wfn_file_initial, wfn_file_final, basis_file_initial, basis_file_final, orbit_file);
+
   FILE* out_file;
-  out_file = fopen("ne20_density_1", "w");
+  out_file = fopen("ge76_density_1", "w");
   printf("j_op: %d t_op: %d\n", j_op, t_op);
   int ns = wd->n_shells;
   // Determine the number of intermediate proton SDs
@@ -354,7 +356,7 @@ void one_body_density(int j_op, int t_op) {
     float ti = wd->t_nuc_i[psi_i];
     float mti = 0.5*(wd->n_proton_i - wd->n_neutron_i);
     // Loop over final eigenstates
-    for (int psi_f = 7; psi_f < 8; psi_f++) {
+    for (int psi_f = 0; psi_f < 1; psi_f++) {
       float cg_j = 0.0;
       float cg_t = 0.0;
       float jf = wd->j_nuc_f[psi_f];
@@ -426,8 +428,8 @@ void one_body_density(int j_op, int t_op) {
   fclose(out_file);
 }
 
-float trace_a4_nodes(int a, int b, int c, int d, int num_mj, int n_sds_int2, int* p2_array_f, sd_list** p2_list_i, wf_list** n0_list_i, wfnData* wd, int psi_i, int psi_f, int i_op) {
-  float total = 0.0;
+double trace_a4_nodes(int a, int b, int c, int d, int num_mj, int n_sds_int2, int* p2_array_f, sd_list** p2_list_i, wf_list** n0_list_i, wfnData* wd, int psi_i, int psi_f, int i_op) {
+  double total = 0.0;
   int ns = wd->n_shells;
 
   for (int ipar = 0; ipar <= 1; ipar++) {
@@ -507,11 +509,11 @@ float trace_a4_nodes(int a, int b, int c, int d, int num_mj, int n_sds_int2, int
   return total;
 }
 
-float trace_a22_nodes(int a, int b, int c, int d, int num_mj, sd_list** a2_list_i, sd_list** a2_list_f, wfnData* wd, int psi_i, int psi_f, int i_op) {
+double trace_a22_nodes(int a, int b, int c, int d, int num_mj, sd_list** a2_list_i, sd_list** a2_list_f, wfnData* wd, int psi_i, int psi_f, int i_op) {
 /* 
 
 */
-  float total = 0.0;
+  double total = 0.0;
   int ns = wd->n_shells;
   for (int ipar = 0; ipar <=1; ipar++) {
     for (int imj = 0; imj < num_mj; imj++) {
@@ -601,9 +603,9 @@ float trace_a22_nodes(int a, int b, int c, int d, int num_mj, sd_list** a2_list_
   return total;
 }
 
-float trace_a20_nodes(int a, int b, int c, int d, int num_mj, int n_sds_p_int1, int n_sds_n_int1, sd_list** p1_list_i, sd_list** n1_list_i, int* p1_array_f, int* n1_array_f, wfnData* wd, int psi_i, int psi_f) {
+double trace_a20_nodes(int a, int b, int c, int d, int num_mj, int n_sds_p_int1, int n_sds_n_int1, sd_list** p1_list_i, sd_list** n1_list_i, int* p1_array_f, int* n1_array_f, wfnData* wd, int psi_i, int psi_f) {
 
-  float total = 0.0;
+  double total = 0.0;
   int ns = wd->n_shells;
   for (int ipar = 0; ipar <= 1; ipar++) {
     for (int imj = 0; imj < num_mj; imj++) {
@@ -878,9 +880,9 @@ void build_one_body_jumps_f(int n_s, int n_p, float mj_min, float mj_max, int nu
   return;
 }
 
-float trace_1body_t0_nodes(int a, int b, int num_mj, int n_sds_int, int* a1_array_f, sd_list** a1_list_i, wf_list** a0_list_i, wfnData* wd, int psi_i, int psi_f, int i_op) {
+double trace_1body_t0_nodes(int a, int b, int num_mj, int n_sds_int, int* a1_array_f, sd_list** a1_list_i, wf_list** a0_list_i, wfnData* wd, int psi_i, int psi_f, int i_op) {
 
-  float total = 0.0;
+  double total = 0.0;
   int ns = wd->n_shells;
 
   for (int ipar = 0; ipar <= 1; ipar++) {
@@ -960,11 +962,11 @@ float trace_1body_t0_nodes(int a, int b, int num_mj, int n_sds_int, int* a1_arra
 return total;
 }
 
-float trace_1body_t2_nodes(int a, int b, int num_mj, sd_list** a1_list_i, sd_list** a1_list_f, wfnData* wd, int psi_i, int psi_f, int i_op) {
+double trace_1body_t2_nodes(int a, int b, int num_mj, sd_list** a1_list_i, sd_list** a1_list_f, wfnData* wd, int psi_i, int psi_f, int i_op) {
 /* 
 
 */
-  float total = 0.0;
+  double total = 0.0;
   int ns = wd->n_shells;
   for (int ipar = 0; ipar <=1; ipar++) {
     for (int imj = 0; imj < num_mj; imj++) {

@@ -18,7 +18,7 @@
 #define A_FACTOR 9.155 // [MeV] Average nuclear excitation energy
 #define B_OSC 0.8
 #define Z_ATOM 32 // Atomic Number
-#define HASH_SIZE 53
+#define HASH_SIZE 199
 
 // FILE SETUP
 #define DENSITY_FILE "ne-mg_fermi_density"
