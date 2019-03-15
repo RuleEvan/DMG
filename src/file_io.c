@@ -101,6 +101,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   for (int i = 0; i < wd->n_eig_i; i++) {
     fread(&junk, sizeof(int), 1, in_file);
     int vec_index;
+    double total = 0.0;
     float j_nuc, t_nuc;
     fread(&vec_index, sizeof(int), 1, in_file);
     fread(&wd->e_nuc_i[i], sizeof(float), 1, in_file);
@@ -113,7 +114,9 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
     wd->t_nuc_i[i] = it_nuc/2.0;
     for (int j = 0; j < wd->n_states_i; j++) {
       fread(&wd->bc_i[i + wd->n_eig_i*j], sizeof(float), 1, in_file);
+      total += pow(wd->bc_i[i + wd->n_eig_i*j], 2);
     }
+    printf("State %d norm: %g\n", i, total);
   }
   fclose(in_file);
   printf("Done.\n");
@@ -132,7 +135,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
     fread(&wd->j_shell[i], sizeof(int), 1, in_file);
     fread(&wd->jz_shell[i], sizeof(int), 1, in_file);
     fread(&w_shell, sizeof(int), 1, in_file);
-//    printf("%d, %d, %d, %d, %d\n", i+1, wd->n_shell[i], wd->l_shell[i], wd->j_shell[i], wd->jz_shell[i]);
+ //   printf("%d, %d, %d, %d, %d\n", i+1, wd->n_shell[i], wd->l_shell[i], wd->j_shell[i], wd->jz_shell[i]);
   }
   for (int i = 0; i < wd->n_shells; i++) {
     int n_shell, j_shell, l_shell, jz_shell, w_shell;
@@ -275,6 +278,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
       fread(&junk, sizeof(int), 1, in_file);
       int vec_index;
       float j_nuc, t_nuc;
+      double total = 0.0;
       fread(&vec_index, sizeof(int), 1, in_file);
       fread(&wd->e_nuc_f[i], sizeof(float), 1, in_file);
       fread(&j_nuc, sizeof(float), 1, in_file);
@@ -286,7 +290,10 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
       wd->t_nuc_f[i] = it_nuc/2.0;
       for (int j = 0; j < wd->n_states_f; j++) {
         fread(&wd->bc_f[i + wd->n_eig_f*j], sizeof(float), 1, in_file);
+        total += pow(wd->bc_f[i + wd->n_eig_f*j], 2.0);
+        if (j < 10) {printf("%g\n", wd->bc_f[i + wd->n_eig_f*j]);}
       }
+      printf("State %d norm: %g\n", i, total);
     }
     fclose(in_file);
     printf("Done.\n");
@@ -306,6 +313,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
       fread(&j_shell, sizeof(int), 1, in_file);
       fread(&jz_shell, sizeof(int), 1, in_file);
       fread(&w_shell, sizeof(int), 1, in_file);
+      printf("%d, %d, %d, %d, %d\n", n_shell, l_shell, j_shell, jz_shell, w_shell);
     }
   
     wd->wh_hash_f = (wh_list**) calloc(wd->n_sds_p_f*HASH_SIZE, sizeof(wh_list*));
@@ -318,6 +326,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
       for (int j = 0; j < wd->n_proton_f + wd->n_neutron_f; j++) {
         int i_state;
         fread(&i_state, sizeof(int), 1, in_file);
+        if (i == 0) {printf("%d\n", i_state);}
         if (i_state <= wd->n_shells) {
           p_orbitals[ip] = i_state;
           ip++;
@@ -567,7 +576,7 @@ wfnData* read_wfn_data(char *wfn_file_initial, char *wfn_file_final, char *orbit
 }
 
 
-sd_list* create_sd_node(int pi, int pn, int phase, sd_list* next) {
+sd_list* create_sd_node(unsigned int pi, unsigned int pn, int phase, sd_list* next) {
   sd_list* new_node = (sd_list*)malloc(sizeof(sd_list));
   if (new_node == NULL) {
     printf("Error creating node\n");
@@ -581,7 +590,7 @@ sd_list* create_sd_node(int pi, int pn, int phase, sd_list* next) {
   return new_node;
 }
 
-sd_list* sd_append(sd_list* head, int pi, int pn, int phase) {
+sd_list* sd_append(sd_list* head, unsigned int pi, unsigned int pn, int phase) {
   if (head->next == NULL) {
     sd_list* new_node = create_sd_node(pi, pn, phase, NULL);
     head->next = new_node;
@@ -594,6 +603,36 @@ sd_list* sd_append(sd_list* head, int pi, int pn, int phase) {
   
   return head;
 }
+
+sde_list* create_sde_node(unsigned int pi, unsigned int pn, int phase, int n_quanta, sde_list* next) {
+  sde_list* new_node = (sde_list*)malloc(sizeof(sde_list));
+  if (new_node == NULL) {
+    printf("Error creating node\n");
+    exit(0);
+  }
+  new_node->pi = pi;
+  new_node->pn = pn;
+  new_node->phase = phase;
+  new_node->n_quanta = n_quanta;
+  new_node->next = next;
+
+  return new_node;
+}
+
+sde_list* sde_append(sde_list* head, unsigned int pi, unsigned int pn, int phase, int n_quanta) {
+  if (head->next == NULL) {
+    sde_list* new_node = create_sde_node(pi, pn, phase, n_quanta, NULL);
+    head->next = new_node;
+  } else {
+    sde_list* next = head->next;
+    sde_list* new_node = create_sde_node(pi, pn, phase, n_quanta, next);
+    head->next = new_node;
+  }
+
+  
+  return head;
+}
+
 
 wf_list* create_wf_node(unsigned int p, wf_list* next) {
   wf_list* new_node = (wf_list*)malloc(sizeof(wf_list));
@@ -619,6 +658,33 @@ wf_list* wf_append(wf_list* head, unsigned int p) {
 
   return head;
 }
+
+wfe_list* create_wfe_node(unsigned int p, int n_quanta, wfe_list* next) {
+  wfe_list* new_node = (wfe_list*)malloc(sizeof(wfe_list));
+  if (new_node == NULL) {
+    printf("Error creating node\n");
+    exit(0);
+  }
+  new_node->p = p;
+  new_node->n_quanta = n_quanta;
+  new_node->next = next;
+  
+  return new_node;
+}
+
+wfe_list* wfe_append(wfe_list* head, unsigned int p, int n_quanta) {
+  if (head->next == NULL) {
+    wfe_list* new_node = create_wfe_node(p, n_quanta, NULL);
+    head->next = new_node;
+  } else {
+    wfe_list* next = head->next;
+    wfe_list* new_node = create_wfe_node(p, n_quanta, next);
+    head->next = new_node;
+  }
+
+  return head;
+}
+
 
 wh_list* create_wh_node(unsigned int pp, unsigned int pn, unsigned int index, wh_list* next) {
   wh_list* new_node = (wh_list*)malloc(sizeof(wh_list));

@@ -154,7 +154,59 @@ int parity_from_p(unsigned int p, int n_s, int n_p, int* l_shell) {
 
   return pi_tot;
 }
+
+void get_m_pi_q(unsigned int p, int n_s, int n_p, int* n_shell, int* l_shell, int* jz_shell, float* m_j, int* parity, int* n_quanta, int j_min) {
+  unsigned int q = n_choose_k(n_s, n_p) - p;
+  *parity = 1;
+  *m_j = 0;
+  *n_quanta = 0;
+  for (int k = 0; k < n_p; k++) {
+    for (int j = j_min; j <= n_s; j++) {
+      if ((q >= n_choose_k(n_s - j, n_p - k)) && (q < n_choose_k(n_s - (j - 1), n_p - k))) {
+        *m_j += jz_shell[j - 1]/2.0;
+        *parity *= pow(-1.0, l_shell[j - 1]);
+        *n_quanta += 2*n_shell[j - 1] + l_shell[j - 1];
+     
+        q -= n_choose_k(n_s - j, n_p  - k);
+        j_min = j+1;
+        break;
+      }
+    }
+  }
+
+  return;
+}
+
  
+int get_num_quanta(unsigned int p, int n_s, int n_p, int* n_shell, int* l_shell) {
+/* Computes the parity eigenvalue +/- of a given SD p
+
+  Input(s):
+    unsigned int p: Slater determinant
+    int n_s: number of single-particle states
+    int n_p: number of particles
+    int* l_shell: array of orbital angular momentum l values for each single-particle state
+
+  Output(s):
+    int pi_tot: total parity of the given SD
+*/
+
+  unsigned int q = n_choose_k(n_s, n_p) - p;
+  int j_min = 1;
+  int n_tot = 1;
+  for (int k = 0; k < n_p; k++) {
+    for (int j = j_min; j <= n_s; j++) {
+      if ((q >= n_choose_k(n_s - j, n_p - k)) && (q < n_choose_k(n_s - (j - 1), n_p - k))) {
+        n_tot += 2*n_shell[j - 1] + l_shell[j - 1];
+        q -= n_choose_k(n_s - j, n_p  - k);
+        j_min = j+1;
+        break;
+      }
+    }
+  }
+
+  return n_tot;
+}
 
 float m_from_p(unsigned int p, int n_s, int n_p, int* m_shell) {
   /* Returns the total magnetic angular momentum m_j of a given SD p-coefficient
@@ -187,7 +239,7 @@ float m_from_p(unsigned int p, int n_s, int n_p, int* m_shell) {
   return m_tot;
 }
 
-int max_mj(int n_s, int n_p, int *m_shell) {
+int get_max_n_spec_q(int n_s, int n_p, int *n_shell, int* l_shell) {
   /* Computes the maximum mj value of all SDs in the given basis
   
   Input(s):
@@ -200,16 +252,85 @@ int max_mj(int n_s, int n_p, int *m_shell) {
 */
    
   int *found = (int*) calloc(n_s, sizeof(int));
-  int max_j = 0;
+  int max_n_q = 0;
   for (int i = 0; i < n_p; i++) {
-    int cur_max_j = 0;
+    int cur_max = 0;
+    int i_found;
     for (int j = 0; j < n_s; j++) {
       if (found[j]) {continue;}
-      if (m_shell[j] > cur_max_j) {
-        cur_max_j = m_shell[j];
-        found[j] = 1;
+      int n_q = 2*n_shell[j] + l_shell[j];
+      if (n_q > cur_max) {
+        cur_max = n_q;
+        i_found = j;
       }
     }
+    found[i_found] = 1;
+    max_n_q += cur_max;
+  }
+  free(found);
+
+  return max_n_q;
+}
+
+int get_min_n_spec_q(int n_s, int n_p, int *n_shell, int* l_shell) {
+  /* Computes the minimum mj value of all SDs in the given basis
+  
+  Input(s):
+    int n_s: number of single-particle states
+    int n_p: number of particles
+    int* m_shell: array of mj values for each single-particle state
+
+  Outputs():
+    int min_mj: minimum mj in the basis
+*/
+  if (n_p - 2 <= 0) {return 0;}
+  int *found = (int*) calloc(n_s, sizeof(int));
+  int min_n_q = 0;
+  for (int i = 0; i < n_p - 2; i++) {
+    float cur_min = 1000;
+    int i_found;
+    for (int j = 0; j < n_s; j++) {
+      if (found[j]) {continue;}
+      int n_q = 2*n_shell[j] + l_shell[j];
+      if (n_q < cur_min) {
+        cur_min = n_q;
+        i_found = j;
+      }
+    }
+    min_n_q += cur_min;
+    found[i_found] = 1;
+  }
+  free(found);
+
+  return min_n_q;
+}
+
+
+float max_mj(int n_s, int n_p, int *m_shell) {
+  /* Computes the maximum mj value of all SDs in the given basis
+  
+  Input(s):
+    int n_s: number of single-particle states
+    int n_p: number of particles
+    int* m_shell: array of mj values for each single-particle state
+
+  Outputs():
+    int max_mj: maximum mj in the basis
+*/
+   
+  int *found = (int*) calloc(n_s, sizeof(int));
+  float max_j = 0;
+  for (int i = 0; i < n_p; i++) {
+    float cur_max_j = -100;
+    int i_found;
+    for (int j = 0; j < n_s; j++) {
+      if (found[j]) {continue;}
+      if (m_shell[j]/2.0 > cur_max_j) {
+        cur_max_j = m_shell[j]/2.0;
+        i_found = j;
+      }
+    }
+    found[i_found] = 1;
     max_j += cur_max_j;
   }
   free(found);
@@ -217,7 +338,7 @@ int max_mj(int n_s, int n_p, int *m_shell) {
   return max_j;
 }
 
-int min_mj(int n_s, int n_p, int *m_shell) {
+float min_mj(int n_s, int n_p, int *m_shell) {
   /* Computes the minimum mj value of all SDs in the given basis
   
   Input(s):
@@ -230,17 +351,19 @@ int min_mj(int n_s, int n_p, int *m_shell) {
 */
 
   int *found = (int*) calloc(n_s, sizeof(int));
-  int min_j = 0;
+  float min_j = 0;
   for (int i = 0; i < n_p; i++) {
-    int cur_min_j = 0;
+    float cur_min_j = 100;
+    int i_found;
     for (int j = 0; j < n_s; j++) {
       if (found[j]) {continue;}
-      if (m_shell[j] < cur_min_j) {
-        cur_min_j = m_shell[j];
-        found[j] = 1;
+      if (m_shell[j]/2.0 < cur_min_j) {
+        cur_min_j = m_shell[j]/2.0;
+        i_found = j;
       }
     }
     min_j += cur_min_j;
+    found[i_found] = 1;
   }
   free(found);
 

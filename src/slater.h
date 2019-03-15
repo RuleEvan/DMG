@@ -18,6 +18,7 @@ unsigned int bin_from_orbitals(int n_s, int n_p, int *orbitals);
 void initialize_orbitals(int* n_shell, int* l_shell, int* j_shell, int* m_shell);
 unsigned int count_set_bits(unsigned int n);
 unsigned int p_from_binary(int n_s, int n_p, unsigned int b);
+int get_num_quanta(unsigned int p , int n_s, int n_p, int* n_shell, int* l_shell);
 void orbitals_from_binary(int n_s, int n_p, unsigned int b, int *orbitals);
 void generate_binomial_file();
 unsigned int a2_op_b(int n_s, unsigned int b, int n_a, int n_b, int* phase);
@@ -25,7 +26,11 @@ int bit_count(unsigned int b);
 int i_compare(const void * a, const void * b); 
 unsigned int a_op_b(int n_s, unsigned int b, int n_a, int* phase);
 int j_min_from_p(int n_s, int n_p, unsigned int p);
-int max_mj(int n_s, int n_p, int *m_shell);
-int min_mj(int n_s, int n_p, int *m_shell);
+float max_mj(int n_s, int n_p, int *m_shell);
+float min_mj(int n_s, int n_p, int *m_shell);
 unsigned int get_num_sds(int n_s, int n_p);
+void get_m_pi_q(unsigned int p, int n_s, int n_p, int* n_shell, int* l_shell, int* jz_shell, float* m_j, int* parity, int* n_quanta, int j_min);
+int get_max_n_spec_q(int n_s, int n_p, int* n_shell, int* l_shell);
+int get_min_n_spec_q(int n_s, int n_p, int* n_shell, int* l_shell);
+
 #endif

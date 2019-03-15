@@ -14,11 +14,11 @@
 
 // Isotope setup
 #define A_NUC 76 // Atomic Mass
-#define NUM_SHELLS 114
+#define NUM_SHELLS 259
 #define A_FACTOR 9.155 // [MeV] Average nuclear excitation energy
 #define B_OSC 0.8
 #define Z_ATOM 32 // Atomic Number
-#define HASH_SIZE 199
+#define HASH_SIZE 9781
 
 // FILE SETUP
 #define DENSITY_FILE "ne-mg_fermi_density"
@@ -53,18 +53,6 @@
 #define LAMBDA_A 1040.0 //[MeV]
 #define LAMBDA_V 850.0 // [MeV]
 #define PION_MASS 139.57 // [MeV] Charged pion mass
-
-// LR symmetric parameters
-#define M_W1 80.0 // W1 gauge boson mass [GeV]
-#define M_W2_MIN 0.715 // Minimum W2 gauge boson mass [TeV]
-#define XI_MIX_0 0.0016 // Mean mixing angle
-
-// Wave Function Parameters
-#define N_PROTON 1
-#define N_NEUTRON 1
-#define N_OSC_QUANTA 6
-#define M_BASIS 0
-#define N_LANCZOS 20
 
 #define MIN(a,b) ((a) < (b) ? (a):(b))
 #define MAX(a,b) ((a) > (b) ? (a):(b))

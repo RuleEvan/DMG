@@ -14,11 +14,28 @@ typedef struct sd_list
   struct sd_list *next;
 } sd_list;
 
+typedef struct sde_list
+{
+  int pi, pn;
+  int phase;
+  int n_quanta;
+  struct sde_list *next;
+} sde_list;
+
+
 typedef struct wf_list
 {
   unsigned int p;
   struct wf_list *next;
 } wf_list;
+
+typedef struct wfe_list
+{
+  unsigned int p;
+  int n_quanta;
+  struct wfe_list *next;
+} wfe_list;
+
 
 typedef struct wh_list
 {
@@ -45,10 +62,14 @@ typedef struct wfnData
   int same_basis;
 } wfnData;
 
-sd_list* create_sd_node(int pi, int pf, int phase, sd_list* next);
-sd_list* sd_append(sd_list* head, int pi, int pf, int phase);
+sd_list* create_sd_node(unsigned int pi, unsigned int pf, int phase, sd_list* next);
+sd_list* sd_append(sd_list* head, unsigned int pi, unsigned int pf, int phase);
+sde_list* create_sde_node(unsigned int pi, unsigned int pf, int phase, int n_quanta, sde_list* next);
+sde_list* sde_append(sde_list* head, unsigned int pi, unsigned int pf, int phase, int n_quanta);
 wf_list* create_wf_node(unsigned int b, wf_list* next);
 wf_list* wf_append(wf_list* head, unsigned int p);
+wfe_list* create_wfe_node(unsigned int b, int n_quanta, wfe_list* next);
+wfe_list* wfe_append(wfe_list* head, unsigned int p, int n_quanta);
 wh_list* create_wh_node(unsigned int pp, unsigned int pn, unsigned int index, wh_list* next);
 wh_list* wh_append(wh_list* head, unsigned int pp, unsigned int pn, unsigned int index);
 wfnData* read_wfn_data(char *wfn_file_initial, char *wfn_file_final, char *orbit_file);
