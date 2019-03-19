@@ -4,17 +4,24 @@
    The input files are wavefunction files written by BIGSTICK
    The code relies on a factorization between proton and neutron Slater determinants
 */
-void two_body_density_spec(int j_op, int t_op) {
+void two_body_density_spec(speedParams *sp) {
   // Generate two-body density matrix with spectator-energy-dependence
   // Read in data 
-  char wfn_file_initial[] = "ge76_gcn2850.wfn";
-  char wfn_file_final[] = "se76_gcn2850.wfn";
-  char basis_file_initial[] = "ge76_basis.bas";
-  char basis_file_final[] = "se76_basis.bas";
-  char orbit_file[] = "GCN2850.sps";
+  printf("Running\n");
+  char *wfn_file_initial = sp->initial_file_base;
+  strcat(wfn_file_initial, ".wfn");
+  char *wfn_file_final = sp->final_file_base;
+  strcat(wfn_file_final, ".wfn");
+  char *basis_file_initial = sp->initial_file_base;
+  strcat(basis_file_initial, ".bas");
+  printf("%s\n", basis_file_initial);
+  char *basis_file_final = sp->final_file_base;
+  strcat(basis_file_final, ".bas");
+  char orbit_file = "GCN2850.sps";
   wfnData *wd = read_binary_wfn_data(wfn_file_initial, wfn_file_final, basis_file_initial, basis_file_final, orbit_file);
 //  wfnData *wd = read_wfn_data(wfn_file_initial, wfn_file_final, orbit_file);
-
+  int j_op = sp->j_op;
+  int t_op = sp->t_op;
   int ns = wd->n_shells;
 
   // Determine number of intermediate Slater determinants
@@ -293,7 +300,7 @@ void two_body_density_spec(int j_op, int t_op) {
   return;
 }
 
-void two_body_density(int j_op, int t_op) {
+void two_body_density(speedParams *sp) {
 
   // Read in data 
   char wfn_file_initial[] = "ge76_gcn2850.wfn";
@@ -304,7 +311,8 @@ void two_body_density(int j_op, int t_op) {
   wfnData *wd = read_binary_wfn_data(wfn_file_initial, wfn_file_final, basis_file_initial, basis_file_final, orbit_file);
 //  wfnData *wd = read_wfn_data(wfn_file_initial, wfn_file_final, orbit_file);
   double* j_store = (double*) malloc(sizeof(double)*4); // Array to hold density matrix elements for various coupled two-particle state
-
+  int j_op = sp->j_op;
+  int t_op = sp->t_op;
   int ns = wd->n_shells;
 
   // Determine number of intermediate Slater determinants
@@ -566,8 +574,8 @@ void two_body_density(int j_op, int t_op) {
   fclose(out_file);
   return;
 }
-
-void one_body_density(int j_op, int t_op) {
+void one_body_density_spec(speedParams *sp) {return;}
+void one_body_density(speedParams* sp) {
   // Reads in BIGSTICK basis/wavefunction (.trwfn) files along with
   // orbit definition (.sp) files and constructs the one-body density matrices
   // for each initial and final state eigenfunction
@@ -579,7 +587,8 @@ void one_body_density(int j_op, int t_op) {
   char basis_file_final[] = "se76_basis.bas";
   char orbit_file[] = "GCN2850.sps";
   wfnData *wd = read_binary_wfn_data(wfn_file_initial, wfn_file_final, basis_file_initial, basis_file_final, orbit_file);
-
+  int j_op = sp->j_op;
+  int t_op = sp->t_op;
   FILE* out_file;
   out_file = fopen("se76_density_1", "w");
   printf("j_op: %d t_op: %d\n", j_op, t_op);

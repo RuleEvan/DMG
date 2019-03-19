@@ -2,11 +2,13 @@
 #define DENSITY_H
 #include "file_io.h"
 
-void one_body_density(int j_op, int t_op);
+void one_body_density(speedParams* sp);
+ 
+void one_body_denisty_spec(speedParams* sp);
 
-void two_body_density(int j_op, int t_op);
+void two_body_density(speedParams* sp);
 
-void two_body_density_spec(int j_op, int t_op);
+void two_body_density_spec(speedParams* sp);
 
 double trace_a4_nodes(int a, int b, int c, int d, int num_mj, int n_sds_int2, int* p2_array_f, sd_list** p1_list_i, wf_list** n0_list_i, wfnData* wd, int psi_i, int psi_f, int i_op);
 

@@ -62,6 +62,15 @@ typedef struct wfnData
   int same_basis;
 } wfnData;
 
+typedef struct speedParams
+{
+  char *initial_file_base, *final_file_base, *out_file_base;
+  int n_body;
+  int spec_dep;
+  int j_op, t_op;
+  
+} speedParams;
+
 sd_list* create_sd_node(unsigned int pi, unsigned int pf, int phase, sd_list* next);
 sd_list* sd_append(sd_list* head, unsigned int pi, unsigned int pf, int phase);
 sde_list* create_sde_node(unsigned int pi, unsigned int pf, int phase, int n_quanta, sde_list* next);
@@ -74,4 +83,5 @@ wh_list* create_wh_node(unsigned int pp, unsigned int pn, unsigned int index, wh
 wh_list* wh_append(wh_list* head, unsigned int pp, unsigned int pn, unsigned int index);
 wfnData* read_wfn_data(char *wfn_file_initial, char *wfn_file_final, char *orbit_file);
 wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char* basis_file_initial, char *basis_file_final, char *orbit_file);
+speedParams* read_parameter_file(char* parameter_file);
 #endif

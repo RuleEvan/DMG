@@ -1,5 +1,23 @@
 #include "file_io.h"
 
+speedParams* read_parameter_file(char *param_file) {
+  FILE *in_file;
+  speedParams *sp = malloc(sizeof(*sp));
+  in_file = fopen(param_file, "r");
+  sp->initial_file_base = malloc(sizeof(char)*100);
+  fscanf(in_file, "%s\n", sp->initial_file_base);
+  sp->final_file_base = malloc(sizeof(char)*100);
+  fscanf(in_file, "%s\n", sp->final_file_base);
+  sp->out_file_base = malloc(sizeof(char)*100);
+  fscanf(in_file, "%s\n", sp->out_file_base);
+  fscanf(in_file, "%d\n", &sp->n_body);
+  if ((sp->n_body != 1) && (sp->n_body != 2)) {printf("Incorrect request for %d body operator, please type only 1 or 2 here.\n", sp->n_body); exit(0);}
+  fscanf(in_file, "%d,%d\n", &sp->j_op, &sp->t_op);
+  fscanf(in_file, "%d\n", &sp->spec_dep);
+  if ((sp->spec_dep != 0) && (sp->spec_dep) != 1) {printf("Invalid flag for spectator dependence %d, please type only 0 or 1 here\n", sp->spec_dep); exit(0);}
+  return sp;
+}
+
 wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char *basis_file_initial, char *basis_file_final, char *orbit_file) {
   wfnData *wd = malloc(sizeof(*wd));
   FILE *in_file;
@@ -355,6 +373,145 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   return wd;
 }
 
+sd_list* create_sd_node(unsigned int pi, unsigned int pn, int phase, sd_list* next) {
+  sd_list* new_node = (sd_list*)malloc(sizeof(sd_list));
+  if (new_node == NULL) {
+    printf("Error creating node\n");
+    exit(0);
+  }
+  new_node->pi = pi;
+  new_node->pn = pn;
+  new_node->phase = phase;
+  new_node->next = next;
+
+  return new_node;
+}
+
+
+sd_list* sd_append(sd_list* head, unsigned int pi, unsigned int pn, int phase) {
+  if (head->next == NULL) {
+    sd_list* new_node = create_sd_node(pi, pn, phase, NULL);
+    head->next = new_node;
+  } else {
+    sd_list* next = head->next;
+    sd_list* new_node = create_sd_node(pi, pn, phase, next);
+    head->next = new_node;
+  }
+
+  
+  return head;
+}
+
+sde_list* create_sde_node(unsigned int pi, unsigned int pn, int phase, int n_quanta, sde_list* next) {
+  sde_list* new_node = (sde_list*)malloc(sizeof(sde_list));
+  if (new_node == NULL) {
+    printf("Error creating node\n");
+    exit(0);
+  }
+  new_node->pi = pi;
+  new_node->pn = pn;
+  new_node->phase = phase;
+  new_node->n_quanta = n_quanta;
+  new_node->next = next;
+
+  return new_node;
+}
+
+sde_list* sde_append(sde_list* head, unsigned int pi, unsigned int pn, int phase, int n_quanta) {
+  if (head->next == NULL) {
+    sde_list* new_node = create_sde_node(pi, pn, phase, n_quanta, NULL);
+    head->next = new_node;
+  } else {
+    sde_list* next = head->next;
+    sde_list* new_node = create_sde_node(pi, pn, phase, n_quanta, next);
+    head->next = new_node;
+  }
+
+  
+  return head;
+}
+
+
+wf_list* create_wf_node(unsigned int p, wf_list* next) {
+  wf_list* new_node = (wf_list*)malloc(sizeof(wf_list));
+  if (new_node == NULL) {
+    printf("Error creating node\n");
+    exit(0);
+  }
+  new_node->p = p;
+  new_node->next = next;
+  
+  return new_node;
+}
+
+wf_list* wf_append(wf_list* head, unsigned int p) {
+  if (head->next == NULL) {
+    wf_list* new_node = create_wf_node(p, NULL);
+    head->next = new_node;
+  } else {
+    wf_list* next = head->next;
+    wf_list* new_node = create_wf_node(p, next);
+    head->next = new_node;
+  }
+
+  return head;
+}
+
+wfe_list* create_wfe_node(unsigned int p, int n_quanta, wfe_list* next) {
+  wfe_list* new_node = (wfe_list*)malloc(sizeof(wfe_list));
+  if (new_node == NULL) {
+    printf("Error creating node\n");
+    exit(0);
+  }
+  new_node->p = p;
+  new_node->n_quanta = n_quanta;
+  new_node->next = next;
+  
+  return new_node;
+}
+
+wfe_list* wfe_append(wfe_list* head, unsigned int p, int n_quanta) {
+  if (head->next == NULL) {
+    wfe_list* new_node = create_wfe_node(p, n_quanta, NULL);
+    head->next = new_node;
+  } else {
+    wfe_list* next = head->next;
+    wfe_list* new_node = create_wfe_node(p, n_quanta, next);
+    head->next = new_node;
+  }
+
+  return head;
+}
+
+
+wh_list* create_wh_node(unsigned int pp, unsigned int pn, unsigned int index, wh_list* next) {
+  wh_list* new_node = (wh_list*)malloc(sizeof(wh_list));
+  if (new_node == NULL) {
+    printf("Error creating node\n");
+    exit(0);
+  }
+  new_node->pp = pp;
+  new_node->pn = pn;
+  new_node->index = index;
+  new_node->next = next;
+  
+  return new_node;
+}
+
+wh_list* wh_append(wh_list* head, unsigned int pp, unsigned int pn, unsigned int index) {
+  if (head->next == NULL) {
+    wh_list* new_node = create_wh_node(pp, pn, index, NULL);
+    head->next = new_node;
+  } else {
+    wh_list* next = head->next;
+    wh_list* new_node = create_wh_node(pp, pn, index, next);
+    head->next = new_node;
+  }
+
+  return head;
+}
+
+/* Deprecated code
 
 wfnData* read_wfn_data(char *wfn_file_initial, char *wfn_file_final, char *orbit_file) {
   wfnData *wd = malloc(sizeof(*wd));
@@ -576,142 +733,7 @@ wfnData* read_wfn_data(char *wfn_file_initial, char *wfn_file_final, char *orbit
 }
 
 
-sd_list* create_sd_node(unsigned int pi, unsigned int pn, int phase, sd_list* next) {
-  sd_list* new_node = (sd_list*)malloc(sizeof(sd_list));
-  if (new_node == NULL) {
-    printf("Error creating node\n");
-    exit(0);
-  }
-  new_node->pi = pi;
-  new_node->pn = pn;
-  new_node->phase = phase;
-  new_node->next = next;
-
-  return new_node;
-}
-
-sd_list* sd_append(sd_list* head, unsigned int pi, unsigned int pn, int phase) {
-  if (head->next == NULL) {
-    sd_list* new_node = create_sd_node(pi, pn, phase, NULL);
-    head->next = new_node;
-  } else {
-    sd_list* next = head->next;
-    sd_list* new_node = create_sd_node(pi, pn, phase, next);
-    head->next = new_node;
-  }
-
-  
-  return head;
-}
-
-sde_list* create_sde_node(unsigned int pi, unsigned int pn, int phase, int n_quanta, sde_list* next) {
-  sde_list* new_node = (sde_list*)malloc(sizeof(sde_list));
-  if (new_node == NULL) {
-    printf("Error creating node\n");
-    exit(0);
-  }
-  new_node->pi = pi;
-  new_node->pn = pn;
-  new_node->phase = phase;
-  new_node->n_quanta = n_quanta;
-  new_node->next = next;
-
-  return new_node;
-}
-
-sde_list* sde_append(sde_list* head, unsigned int pi, unsigned int pn, int phase, int n_quanta) {
-  if (head->next == NULL) {
-    sde_list* new_node = create_sde_node(pi, pn, phase, n_quanta, NULL);
-    head->next = new_node;
-  } else {
-    sde_list* next = head->next;
-    sde_list* new_node = create_sde_node(pi, pn, phase, n_quanta, next);
-    head->next = new_node;
-  }
-
-  
-  return head;
-}
 
 
-wf_list* create_wf_node(unsigned int p, wf_list* next) {
-  wf_list* new_node = (wf_list*)malloc(sizeof(wf_list));
-  if (new_node == NULL) {
-    printf("Error creating node\n");
-    exit(0);
-  }
-  new_node->p = p;
-  new_node->next = next;
-  
-  return new_node;
-}
-
-wf_list* wf_append(wf_list* head, unsigned int p) {
-  if (head->next == NULL) {
-    wf_list* new_node = create_wf_node(p, NULL);
-    head->next = new_node;
-  } else {
-    wf_list* next = head->next;
-    wf_list* new_node = create_wf_node(p, next);
-    head->next = new_node;
-  }
-
-  return head;
-}
-
-wfe_list* create_wfe_node(unsigned int p, int n_quanta, wfe_list* next) {
-  wfe_list* new_node = (wfe_list*)malloc(sizeof(wfe_list));
-  if (new_node == NULL) {
-    printf("Error creating node\n");
-    exit(0);
-  }
-  new_node->p = p;
-  new_node->n_quanta = n_quanta;
-  new_node->next = next;
-  
-  return new_node;
-}
-
-wfe_list* wfe_append(wfe_list* head, unsigned int p, int n_quanta) {
-  if (head->next == NULL) {
-    wfe_list* new_node = create_wfe_node(p, n_quanta, NULL);
-    head->next = new_node;
-  } else {
-    wfe_list* next = head->next;
-    wfe_list* new_node = create_wfe_node(p, n_quanta, next);
-    head->next = new_node;
-  }
-
-  return head;
-}
-
-
-wh_list* create_wh_node(unsigned int pp, unsigned int pn, unsigned int index, wh_list* next) {
-  wh_list* new_node = (wh_list*)malloc(sizeof(wh_list));
-  if (new_node == NULL) {
-    printf("Error creating node\n");
-    exit(0);
-  }
-  new_node->pp = pp;
-  new_node->pn = pn;
-  new_node->index = index;
-  new_node->next = next;
-  
-  return new_node;
-}
-
-wh_list* wh_append(wh_list* head, unsigned int pp, unsigned int pn, unsigned int index) {
-  if (head->next == NULL) {
-    wh_list* new_node = create_wh_node(pp, pn, index, NULL);
-    head->next = new_node;
-  } else {
-    wh_list* next = head->next;
-    wh_list* new_node = create_wh_node(pp, pn, index, next);
-    head->next = new_node;
-  }
-
-  return head;
-}
-
-
+*/
 
