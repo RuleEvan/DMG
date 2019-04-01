@@ -15,10 +15,21 @@ speedParams* read_parameter_file(char *param_file) {
   fscanf(in_file, "%d,%d\n", &sp->j_op, &sp->t_op);
   fscanf(in_file, "%d\n", &sp->spec_dep);
   if ((sp->spec_dep != 0) && (sp->spec_dep) != 1) {printf("Invalid flag for spectator dependence %d, please type only 0 or 1 here\n", sp->spec_dep); exit(0);}
+  int eig_i, eig_f;
+  sp->n_trans = 0;
+  while (fscanf(in_file, "%d,%d\n", &eig_i, &eig_f) == 2) {
+    (sp->n_trans)++;
+    if (sp->transition_list == NULL) {
+      sp->transition_list = create_eigen_node(eig_i, eig_f, NULL);
+    } else {
+      eigen_append(sp->transition_list, eig_i, eig_f);
+    }
+  }
+  printf("Read in %d transitions\n", sp->n_trans);
   return sp;
 }
 
-wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char *basis_file_initial, char *basis_file_final, char *orbit_file) {
+wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char *basis_file_initial, char *basis_file_final) {
   wfnData *wd = malloc(sizeof(*wd));
   FILE *in_file;
   // Read in initial wavefunction data
@@ -133,8 +144,9 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
     for (int j = 0; j < wd->n_states_i; j++) {
       fread(&wd->bc_i[i + wd->n_eig_i*j], sizeof(float), 1, in_file);
       total += pow(wd->bc_i[i + wd->n_eig_i*j], 2);
+      if ((i == 0) && j < 10) {printf("%g\n", wd->bc_i[i + wd->n_eig_i*j]);}
     }
-    printf("State %d norm: %g\n", i, total);
+    if (fabs(total -1.0) > pow(10, -6)) {printf("State %d not normalized: norm = %g\n", i, total); exit(0);}
   }
   fclose(in_file);
   printf("Done.\n");
@@ -309,9 +321,8 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
       for (int j = 0; j < wd->n_states_f; j++) {
         fread(&wd->bc_f[i + wd->n_eig_f*j], sizeof(float), 1, in_file);
         total += pow(wd->bc_f[i + wd->n_eig_f*j], 2.0);
-        if (j < 10) {printf("%g\n", wd->bc_f[i + wd->n_eig_f*j]);}
       }
-      printf("State %d norm: %g\n", i, total);
+      if (fabs(total - 1.0) > pow(10, -6)) {printf("State %d is not normalized: norm = %g\n", i, total); exit(0);}
     }
     fclose(in_file);
     printf("Done.\n");
@@ -331,7 +342,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
       fread(&j_shell, sizeof(int), 1, in_file);
       fread(&jz_shell, sizeof(int), 1, in_file);
       fread(&w_shell, sizeof(int), 1, in_file);
-      printf("%d, %d, %d, %d, %d\n", n_shell, l_shell, j_shell, jz_shell, w_shell);
+      //printf("%d, %d, %d, %d, %d\n", n_shell, l_shell, j_shell, jz_shell, w_shell);
     }
   
     wd->wh_hash_f = (wh_list**) calloc(wd->n_sds_p_f*HASH_SIZE, sizeof(wh_list*));
@@ -344,7 +355,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
       for (int j = 0; j < wd->n_proton_f + wd->n_neutron_f; j++) {
         int i_state;
         fread(&i_state, sizeof(int), 1, in_file);
-        if (i == 0) {printf("%d\n", i_state);}
+      //  if (i == 0) {printf("%d\n", i_state);}
         if (i_state <= wd->n_shells) {
           p_orbitals[ip] = i_state;
           ip++;
@@ -510,6 +521,33 @@ wh_list* wh_append(wh_list* head, unsigned int pp, unsigned int pn, unsigned int
 
   return head;
 }
+
+eigen_list* create_eigen_node(int eig_i, int eig_f, eigen_list* next) {
+  eigen_list* new_node = (eigen_list*)malloc(sizeof(eigen_list));
+  if (new_node == NULL) {
+    printf("Error creating node\n");
+    exit(0);
+  }
+  new_node->eig_i = eig_i;
+  new_node->eig_f = eig_f;
+  new_node->next = next;
+  
+  return new_node;
+}
+
+eigen_list* eigen_append(eigen_list* head, int eig_i, int eig_f) {
+  if (head->next == NULL) {
+    eigen_list* new_node = create_eigen_node(eig_i, eig_f, NULL);
+    head->next = new_node;
+  } else {
+    eigen_list* next = head->next;
+    eigen_list* new_node = create_eigen_node(eig_i, eig_f, next);
+    head->next = new_node;
+  }
+
+  return head;
+}
+
 
 /* Deprecated code
 

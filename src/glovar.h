@@ -3,14 +3,7 @@
 #include "stdlib.h"
 #include "stdint.h"
 #include "string.h"
-#include <gsl/gsl_sf_gamma.h>
-#include <gsl/gsl_sf_expint.h>
-#include <gsl/gsl_sf_result.h>
-#include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>
-#include <gsl/gsl_spline.h>
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_sf_bessel.h>
+#include <gsl/gsl_sf.h>
 
 #define HASH_SIZE 9781
 

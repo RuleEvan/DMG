@@ -2,6 +2,13 @@
 #define FILE_IO_H
 #include "slater.h"
 
+typedef struct eigen_list
+{
+  int eig_i;
+  int eig_f;
+  struct eigen_list *next;
+} eigen_list;
+
 typedef struct sBasisCoeff 
 {
   double *wave;
@@ -68,6 +75,8 @@ typedef struct speedParams
   int n_body;
   int spec_dep;
   int j_op, t_op;
+  int n_trans;
+  eigen_list *transition_list;
   
 } speedParams;
 
@@ -81,7 +90,9 @@ wfe_list* create_wfe_node(unsigned int b, int n_quanta, wfe_list* next);
 wfe_list* wfe_append(wfe_list* head, unsigned int p, int n_quanta);
 wh_list* create_wh_node(unsigned int pp, unsigned int pn, unsigned int index, wh_list* next);
 wh_list* wh_append(wh_list* head, unsigned int pp, unsigned int pn, unsigned int index);
+eigen_list* create_eigen_node(int eig_i, int eig_n, eigen_list* next);
+eigen_list* eigen_append(eigen_list* head, int eig_i, int eig_f);
 wfnData* read_wfn_data(char *wfn_file_initial, char *wfn_file_final, char *orbit_file);
-wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char* basis_file_initial, char *basis_file_final, char *orbit_file);
+wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char* basis_file_initial, char *basis_file_final);
 speedParams* read_parameter_file(char* parameter_file);
 #endif
