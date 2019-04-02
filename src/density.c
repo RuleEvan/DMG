@@ -121,8 +121,8 @@ void two_body_density_spec(speedParams *sp) {
     if (cg_j == 0.0) {continue;}
     cg_t = clebsch_gordan(t_op, ti, tf, mt_op, mti, mtf);
     if (cg_t == 0.0) {continue;}
-    cg_j *= pow(-1.0, j_op + ji + jf)*sqrt(2*j_op + 1)/sqrt(2*jf + 1);
-    cg_t *= pow(-1.0, t_op + ti + tf)*sqrt(2*t_op + 1)/sqrt(2*tf + 1);
+    cg_j *= pow(-1.0, jf - ji)/sqrt(2*jf + 1);
+    cg_t *= pow(-1.0, tf - ti)/sqrt(2*tf + 1);
     printf("Initial state: # %d J: %g T: %g Final state: # %d J: %g T: %g\n", psi_i + 1, ji, ti, psi_f + 1, jf, tf);
     strcpy(output_density_file, sp->out_file_base);
     sprintf(output_suffix, "_J%d_T%d_%d_%d.dens", j_op, t_op, psi_i, psi_f);
@@ -446,8 +446,8 @@ void two_body_density(speedParams *sp) {
     if (cg_j == 0.0) {continue;}
     cg_t = clebsch_gordan(t_op, ti, tf, mt_op, mti, mtf);
     if (cg_t == 0.0) {continue;}
-    cg_j *= pow(-1.0, j_op + ji + jf)*sqrt(2*j_op + 1)/sqrt(2*jf + 1);
-    cg_t *= pow(-1.0, t_op + ti + tf)*sqrt(2*t_op + 1)/sqrt(2*tf + 1);
+    cg_j *= pow(-1.0, jf - ji)/sqrt(2*jf + 1);
+    cg_t *= pow(-1.0, tf - ti)/sqrt(2*tf + 1);
     printf("Initial state: # %d J: %g T: %g Final state: # %d J: %g T: %g\n", psi_i + 1, ji, ti, psi_f + 1, jf, tf);
     strcpy(output_density_file, sp->out_file_base);
     sprintf(output_suffix, "_J%d_T%d_%d_%d.dens", j_op, t_op, psi_i, psi_f);
@@ -457,12 +457,6 @@ void two_body_density(speedParams *sp) {
     i_trans++;
     trans = trans->next;
   } 
-  int j_max = 0;
-  for (int i_orb = 0; i_orb < wd->n_orbits; i_orb++) {
-    if (wd->j_orb[i_orb] > j_max) {
-      j_max = wd->j_orb[i_orb];
-    }
-  }
   double* j_store = (double*) malloc(4*sizeof(double));
   double* density = (double*) calloc(sp->n_trans, sizeof(double));
   // Loop over orbital a
@@ -1150,7 +1144,7 @@ void trace_a22_nodes(int a, int b, int c, int d, int num_mj, sd_list** a2_list_i
 
 */
   int ns = wd->n_shells;
-  for (int ipar = 0; ipar <=1; ipar++) {
+  for (int ipar = 0; ipar <= 1; ipar++) {
     for (int imj = 0; imj < num_mj; imj++) {
       sd_list* node1 = a2_list_i[ipar + 2*(imj + num_mj*(c + d*ns))];
       // Loop over final states resulting from 2x a_op
