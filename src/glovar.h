@@ -3,6 +3,7 @@
 #include "stdlib.h"
 #include "stdint.h"
 #include "string.h"
+#include "time.h"
 #include <gsl/gsl_sf.h>
 
 #define HASH_SIZE 9781

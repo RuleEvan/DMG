@@ -32,5 +32,6 @@ unsigned int get_num_sds(int n_s, int n_p);
 void get_m_pi_q(unsigned int p, int n_s, int n_p, int* n_shell, int* l_shell, int* jz_shell, float* m_j, int* parity, int* n_quanta, int j_min);
 int get_max_n_spec_q(int n_s, int n_p, int* n_shell, int* l_shell);
 int get_min_n_spec_q(int n_s, int n_p, int* n_shell, int* l_shell);
+int w_from_p(unsigned int p, int n_s, int n_p, int* w_shell);
 
 #endif

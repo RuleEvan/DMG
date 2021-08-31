@@ -58,11 +58,12 @@ typedef struct wfnData
   long long int n_states_i, n_states_f;
   int n_shells, n_orbits, n_data;
   int n_eig_i, n_eig_f;
+  int parity_i, wmax_i, parity_f, wmax_f;
   unsigned int n_sds_p_i, n_sds_p_f, n_sds_n_i, n_sds_n_f;
   wh_list **wh_hash_i, **wh_hash_f;
   float *bc_i, *bc_f;
-  int *n_shell, *l_shell, *j_shell, *jz_shell, *tz_shell;
-  int *n_orb, *l_orb;
+  int *n_shell, *l_shell, *j_shell, *jz_shell, *tz_shell, *w_shell;
+  int *n_orb, *l_orb, *w_orb;
   float *j_orb;
   float jz_i, jz_f;
   float *e_nuc_i, *e_nuc_f, *j_nuc_i, *j_nuc_f, *t_nuc_i, *t_nuc_f;

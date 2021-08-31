@@ -208,6 +208,39 @@ int get_num_quanta(unsigned int p, int n_s, int n_p, int* n_shell, int* l_shell)
   return n_tot;
 }
 
+int w_from_p(unsigned int p, int n_s, int n_p, int* w_shell) {
+  /* Returns the total weighted w of a given SD p-coefficient
+  Uses the same algorithm as orbitals_from_p to reconstruct the occupied orbitals
+  and simply sums the resulting w values
+
+  Input(s): 
+    unsigned int p: SD p-coefficient
+    int n_s: number of single-particle states
+    int n_p: number of particles
+    int array w_shell: array of w values for each single-particle orbital
+    
+  Output(s): 
+    int m_tot: total m_j value of the given SD
+ */
+
+  unsigned int q = n_choose_k(n_s, n_p) - p;
+  int j_min = 1;
+  int w_tot = 0;
+  for (int k = 0; k < n_p; k++) {
+    for (int j = j_min; j <= n_s; j++) {
+      if ((q >= n_choose_k(n_s - j, n_p - k)) && (q < n_choose_k(n_s - (j - 1), n_p - k))) {
+        w_tot += w_shell[j-1];
+        q -= n_choose_k(n_s - j, n_p  - k);
+        j_min = j+1;
+        break;
+      }
+    }
+  }
+  
+  return w_tot;
+}
+
+
 float m_from_p(unsigned int p, int n_s, int n_p, int* m_shell) {
   /* Returns the total magnetic angular momentum m_j of a given SD p-coefficient
   Uses the same algorithm as orbitals_from_p to reconstruct the occupied orbitals
@@ -399,7 +432,7 @@ unsigned int n_choose_k(int n, int k) {
 /* Wrapper to gsl code to compute binomial coefficient
    Provides zero result when n < k (required for Whitehead algorithms)
 */
-
+  if (n < 0 || k < 0) {printf("Error %d %d\n", n, k);}
   unsigned int c = 0;
   if (k > n) {return c;}
   c = gsl_sf_choose(n, k);
