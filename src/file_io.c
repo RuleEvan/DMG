@@ -11,10 +11,8 @@ speedParams* read_parameter_file(char *param_file) {
   sp->out_file_base = malloc(sizeof(char)*100);
   fscanf(in_file, "%s\n", sp->out_file_base);
   fscanf(in_file, "%d\n", &sp->n_body);
-  if ((sp->n_body != 1) && (sp->n_body != 2)) {printf("Incorrect request for %d body operator, please type only 1 or 2 here.\n", sp->n_body); exit(0);}
   fscanf(in_file, "%d,%d\n", &sp->j_op, &sp->t_op);
-  fscanf(in_file, "%d\n", &sp->spec_dep);
-  if ((sp->spec_dep != 0) && (sp->spec_dep) != 1) {printf("Invalid flag for spectator dependence %d, please type only 0 or 1 here\n", sp->spec_dep); exit(0);}
+  if ((sp->n_body != 1) && (sp->n_body != 2)) {printf("Incorrect request for %d body operator, please type only 1 or 2 here.\n", sp->n_body); exit(0);}
   int eig_i, eig_f;
   sp->n_trans = 0;
   while (fscanf(in_file, "%d,%d\n", &eig_i, &eig_f) == 2) {
@@ -33,7 +31,8 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   wfnData *wd = malloc(sizeof(*wd));
   FILE *in_file;
   // Read in initial wavefunction data
-  printf("Opening file\n");
+  printf("\n");
+  printf("Opening initial state wfn file\n");
   in_file = fopen(wfn_file_initial, "rb");
   int junk;
   fread(&junk, sizeof(int), 1, in_file);
@@ -191,33 +190,24 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   }
 
   wd->wh_hash_i = (wh_list**) calloc(wd->n_sds_p_i*HASH_SIZE, sizeof(wh_list*));
-  int *p_orbitals = (int*) malloc(sizeof(int)*wd->n_proton_i);
-  int *n_orbitals = (int*) malloc(sizeof(int)*wd->n_neutron_i);
   int pp0 = gsl_sf_choose(wd->n_shells, wd->n_proton_i);
   int pn0 = gsl_sf_choose(wd->n_shells, wd->n_neutron_i);
   for (int i = 0; i < wd->n_states_i; i++) {
-    if (i % 1000000 == 0) {printf("%d\n", i);}
     int in = 0;
     int ip = 0;
     unsigned int pp = pp0;
     unsigned int pn = pn0;
-  //  printf("New state\n");
     for (int j = 0; j < wd->n_data; j++) {
       int i_state;
       fread(&i_state, sizeof(int), 1, in_file);
- //     printf("%d\n", i_state);
       if (i_state <= wd->n_shells) {
- //       p_orbitals[ip] = i_state;
         pp -= n_choose_k(wd->n_shells - i_state, wd->n_proton_i - ip);
         ip++;
       } else {
- //       n_orbitals[in] = i_state - wd->n_shells;
         pn -= n_choose_k(2*(wd->n_shells) - i_state, wd->n_neutron_i - in);
         in++;
       }
     }
-//    unsigned int pp = p_step(wd->n_shells, wd->n_proton_i, p_orbitals);
-//    unsigned int pn = p_step(wd->n_shells, wd->n_neutron_i, n_orbitals);
     unsigned int p_hash = pp + wd->n_sds_p_i*(pn % HASH_SIZE);
     if (wd->wh_hash_i[p_hash] == NULL) {
       wd->wh_hash_i[p_hash] = create_wh_node(pp, pn, i, NULL);
@@ -225,13 +215,11 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
       wh_append(wd->wh_hash_i[p_hash], pp, pn, i);
     }
   }
-  free(p_orbitals);
-  free(n_orbitals);
   printf("Done.\n");
   fclose(in_file);
-  
+  printf("\n");
   if (strcmp(wfn_file_initial, wfn_file_final) == 0) {
-    printf("Initial and final states are identical\n");
+    printf("Initial and final bases are identical.\n");
     wd->same_basis = 1;
     wd->n_proton_f = wd->n_proton_i;
     wd->n_neutron_f = wd->n_neutron_i;
@@ -249,7 +237,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
     wd->bc_f = wd->bc_i;
     wd->wh_hash_f = wd->wh_hash_i;
   } else {
-    printf("Initial and final states differ\n");
+    printf("Initial and final bases are different.\n");
     wd->same_basis = 0;
     in_file = fopen(wfn_file_final, "rb");
     fread(&junk, sizeof(int), 1, in_file);
@@ -377,34 +365,25 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
       //printf("%d, %d, %d, %d, %d\n", n_shell, l_shell, j_shell, jz_shell, w_shell);
     }
     wd->wh_hash_f = (wh_list**) calloc(wd->n_sds_p_f*HASH_SIZE, sizeof(wh_list*));
-    p_orbitals = (int*) malloc(sizeof(int)*wd->n_proton_f);
-    n_orbitals = (int*) malloc(sizeof(int)*wd->n_neutron_f);
     int pp0 = gsl_sf_choose(wd->n_shells, wd->n_proton_f);
     int pn0 = gsl_sf_choose(wd->n_shells, wd->n_neutron_f);
     for (int i = 0; i < wd->n_states_f; i++) {
-    if (i % 1000000 == 0) {printf("%d\n", i);}
-    int in = 0;
-    int ip = 0;
-    unsigned int pp = pp0;
-    unsigned int pn = pn0;
-  //  printf("New state\n");
-    for (int j = 0; j < wd->n_data; j++) {
-      int i_state;
-      fread(&i_state, sizeof(int), 1, in_file);
- //     printf("%d\n", i_state);
-      if (i_state <= wd->n_shells) {
- //       p_orbitals[ip] = i_state;
-        pp -= n_choose_k(wd->n_shells - i_state, wd->n_proton_f - ip);
-        ip++;
-      } else {
- //       n_orbitals[in] = i_state - wd->n_shells;
-        pn -= n_choose_k(2*(wd->n_shells) - i_state, wd->n_neutron_f - in);
-        in++;
+      int in = 0;
+      int ip = 0;
+      unsigned int pp = pp0;
+      unsigned int pn = pn0;
+      for (int j = 0; j < wd->n_data; j++) {
+        int i_state;
+        fread(&i_state, sizeof(int), 1, in_file);
+        if (i_state <= wd->n_shells) {
+          pp -= n_choose_k(wd->n_shells - i_state, wd->n_proton_f - ip);
+          ip++;
+        } else {
+          pn -= n_choose_k(2*(wd->n_shells) - i_state, wd->n_neutron_f - in);
+          in++;
+        }
       }
-    }
 
-    //  unsigned int pp = p_step(wd->n_shells, wd->n_proton_f, p_orbitals);
-    //  unsigned int pn = p_step(wd->n_shells, wd->n_neutron_f, n_orbitals);
       unsigned int p_hash = pp + wd->n_sds_p_f*(pn % HASH_SIZE);
       if (wd->wh_hash_f[p_hash] == NULL) {
         wd->wh_hash_f[p_hash] = create_wh_node(pp, pn, i, NULL);
@@ -413,8 +392,6 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
       }
     }
     printf("Done.\n");
-    free(p_orbitals);
-    free(n_orbitals);
     fclose(in_file);
 
   }
@@ -578,6 +555,18 @@ eigen_list* eigen_append(eigen_list* head, int eig_i, int eig_f) {
     eigen_list* new_node = create_eigen_node(eig_i, eig_f, NULL);
     head->next = new_node;
   } else {
+    head = eigen_append(head->next, eig_i, eig_f);
+  }
+
+  return head;
+}
+
+
+/* eigen_list* eigen_append(eigen_list* head, int eig_i, int eig_f) {
+  if (head->next == NULL) {
+    eigen_list* new_node = create_eigen_node(eig_i, eig_f, NULL);
+    head->next = new_node;
+  } else {
     eigen_list* next = head->next;
     eigen_list* new_node = create_eigen_node(eig_i, eig_f, next);
     head->next = new_node;
@@ -585,231 +574,4 @@ eigen_list* eigen_append(eigen_list* head, int eig_i, int eig_f) {
 
   return head;
 }
-
-
-/* Deprecated code
-
-wfnData* read_wfn_data(char *wfn_file_initial, char *wfn_file_final, char *orbit_file) {
-  wfnData *wd = malloc(sizeof(*wd));
-  FILE* in_file;
-  // Read in initial wavefunction data
-  in_file = fopen(wfn_file_initial, "r");
-  fscanf(in_file, "%d\n", &wd->n_proton_i);
-  fscanf(in_file, "%d\n", &wd->n_neutron_i);
-  wd->n_data = wd->n_proton_i + wd->n_neutron_i;
-  char buffer[100];
-  fgets(buffer, 100, in_file);
-  fgets(buffer, 100, in_file);
-  fgets(buffer, 100, in_file);
-  fscanf(in_file, "%d", &wd->n_shells);
-  wd->n_shells /= 2; // Mod out isospin
-  fgets(buffer, 100, in_file);
-  fgets(buffer, 100, in_file);
-  fscanf(in_file, "%d", &wd->n_states_i);
-  printf("Initial state contains %d protons and %d neutrons\n", wd->n_proton_i, wd->n_neutron_i);
-  printf("The model space has %d shells for a total basis size of %d\n", wd->n_shells, wd->n_states_i);
-
-  fgets(buffer, 100, in_file);
-  fgets(buffer, 100, in_file);
-  fscanf(in_file, "%f", &wd->jz_i);
-  fgets(buffer, 100, in_file);
-  fscanf(in_file, "%d", &wd->n_eig_i);
-  printf("Initial state file contains %d eigenstates\n", wd->n_eig_i);
-  fgets(buffer, 100, in_file);
-  wd->e_nuc_i =  (float*) malloc(sizeof(float)*wd->n_eig_i);
-  wd->j_nuc_i =  (float*) malloc(sizeof(float)*wd->n_eig_i);
-  wd->t_nuc_i =  (float*) malloc(sizeof(float)*wd->n_eig_i);
-  for (int i = 0; i < wd->n_eig_i; i++) {
-    fscanf(in_file, "%f", &wd->e_nuc_i[i]);
-    fscanf(in_file, "%f", &wd->j_nuc_i[i]);
-    fscanf(in_file, "%f", &wd->t_nuc_i[i]);
-    wd->j_nuc_i[i] = round(fabs(wd->j_nuc_i[i]));
-    wd->t_nuc_i[i] = round(fabs(wd->t_nuc_i[i]));
-    if (wd->n_data % 2) {
-      wd->j_nuc_i[i] -= 0.5;
-      wd->t_nuc_i[i] -= 0.5;
-    }
-    fgets(buffer, 100, in_file);
-  }
-  wd->n_shell = (int*) malloc(sizeof(int)*wd->n_shells);
-  wd->j_shell = (int*) malloc(sizeof(int)*wd->n_shells);
-  wd->l_shell = (int*) malloc(sizeof(int)*wd->n_shells);
-  wd->jz_shell = (int*) malloc(sizeof(int)*wd->n_shells);
-  //wd->tz_shell = (int*) malloc(sizeof(int)*wd->n_shells);
-  wd->n_sds_p_i = get_num_sds(wd->n_shells, wd->n_proton_i);
-  wd->n_sds_n_i = get_num_sds(wd->n_shells, wd->n_neutron_i);
-
-  // Read in shell quantum numbers
-  for (int i = 0; i < wd->n_shells; i++) {
-    fscanf(in_file, "%*d %d %d %d %d %*d\n", &wd->n_shell[i], &wd->l_shell[i], &wd->j_shell[i], &wd->jz_shell[i]);
-  }
-  // Skip shells with opposite isospin
-  for (int i = 0; i < wd->n_shells; i++) {
-    fscanf(in_file, "%*d %*d %*d %*d %*d %*d\n");
-  }
-
-  printf("Reading in initial state wavefunction coefficients\n");
-  wd->wh_hash_i = (wh_list**) calloc(wd->n_sds_p_i*HASH_SIZE, sizeof(wh_list*));
-  wd->bc_i = malloc(sizeof(float)*wd->n_states_i*wd->n_eig_i);
-  int *p_orbitals = (int*) malloc(sizeof(int)*wd->n_proton_i);
-  int *n_orbitals = (int*) malloc(sizeof(int)*wd->n_neutron_i);
-  for (int i = 0; i < wd->n_states_i; i++) {
-    int in = 0;
-    int ip = 0;
-    for (int j = 0; j < wd->n_data; j++) {
-      int i_orb;
-      fscanf(in_file, "%d", &i_orb);
-      if (i_orb <= wd->n_shells) {
-        p_orbitals[ip] = i_orb;
-        ip++;
-      } else {
-        n_orbitals[in] = i_orb - wd->n_shells;
-        in++;
-      }
-    }
-    unsigned int pp = p_step(wd->n_shells, wd->n_proton_i, p_orbitals);
-    unsigned int pn = p_step(wd->n_shells, wd->n_neutron_i, n_orbitals);
-    unsigned int p_hash = pp + wd->n_sds_p_i*(pn % HASH_SIZE);
-    if (wd->wh_hash_i[p_hash] == NULL) {
-      wd->wh_hash_i[p_hash] = create_wh_node(pp, pn, i, NULL);
-    } else {
-      wh_append(wd->wh_hash_i[p_hash], pp, pn, i);
-    }
-
-    fgets(buffer, 100, in_file);
-    for (int j = 0; j < wd->n_eig_i; j++) {
-      fscanf(in_file, "%f\n", &wd->bc_i[j + wd->n_eig_i*i]);
-    }
-  }
-  free(p_orbitals);
-  free(n_orbitals);
-  fclose(in_file);
-  
-    
-
-  if (strcmp(wfn_file_initial, wfn_file_final) == 0) {
-    printf("Initial and final states are identical\n");
-    wd->same_basis = 1;
-    wd->n_proton_f = wd->n_proton_i;
-    wd->n_neutron_f = wd->n_neutron_i;
-    wd->n_states_f = wd->n_states_i;
-    wd->n_sds_p_f = wd->n_sds_p_i;
-    wd->n_sds_n_f = wd->n_sds_n_i;
-    wd->jz_f = wd->jz_i;
-    wd->n_eig_f = wd->n_eig_i;    
-    wd->e_nuc_f =  (float*) malloc(sizeof(float)*wd->n_eig_f);
-    wd->j_nuc_f =  (float*) malloc(sizeof(float)*wd->n_eig_f);
-    wd->t_nuc_f =  (float*) malloc(sizeof(float)*wd->n_eig_f);
-    wd->e_nuc_f = wd->e_nuc_i;
-    wd->j_nuc_f = wd->j_nuc_i;
-    wd->t_nuc_f = wd->t_nuc_i;
-    wd->bc_f = wd->bc_i;
-    wd->wh_hash_f = wd->wh_hash_i;
-  } else {
-    wd->same_basis = 0;
-    in_file = fopen(wfn_file_final, "r");
-    int n_shells_test;
-    fscanf(in_file, "%d\n", &wd->n_proton_f);
-    fscanf(in_file, "%d\n", &wd->n_neutron_f);
-    wd->n_sds_p_f = get_num_sds(wd->n_shells, wd->n_proton_f);
-    wd->n_sds_n_f = get_num_sds(wd->n_shells, wd->n_neutron_f);
-    fgets(buffer, 100, in_file);
-    fgets(buffer, 100, in_file);
-    fgets(buffer, 100, in_file);
-    fscanf(in_file, "%d", &n_shells_test);
-    fgets(buffer, 100, in_file);
-    fgets(buffer, 100, in_file);
-    fscanf(in_file, "%d", &wd->n_states_f);
-    printf("Final state contains %d protons and %d neutrons\n", wd->n_proton_f, wd->n_neutron_f);
-    if (wd->n_shells != n_shells_test/2) {printf("Error: number of shells does not agree between initial and final state model spaces\n"); exit(0);}
-    printf("The model space has %d shells for a total basis size of %d\n", wd->n_shells, wd->n_states_f);
-    if (wd->n_proton_f + wd->n_neutron_f != wd->n_proton_i + wd->n_neutron_i) {printf("Error: total number of nucleons is not constant\n"); exit(0);}
-    fgets(buffer, 100, in_file);
-    fgets(buffer, 100, in_file);
-    fscanf(in_file, "%f", &wd->jz_f);
-    fgets(buffer, 100, in_file);
-    fscanf(in_file, "%d", &wd->n_eig_f);
-    printf("Final state file contains %d eigenvalues\n", wd->n_eig_f);
-    fgets(buffer, 100, in_file);
-    wd->e_nuc_f =  (float*) malloc(sizeof(float)*wd->n_eig_f);
-    wd->j_nuc_f =  (float*) malloc(sizeof(float)*wd->n_eig_f);
-    wd->t_nuc_f =  (float*) malloc(sizeof(float)*wd->n_eig_f);
-
-    for (int i = 0; i < wd->n_eig_f; i++) {
-      fscanf(in_file, "%f", &wd->e_nuc_f[i]);
-      fscanf(in_file, "%f", &wd->j_nuc_f[i]);
-      fscanf(in_file, "%f", &wd->t_nuc_f[i]);
-      wd->j_nuc_f[i] = round(fabs(wd->j_nuc_f[i]));
-      wd->t_nuc_f[i] = round(fabs(wd->t_nuc_f[i]));
-      if (wd->n_data % 2) {
-        wd->j_nuc_f[i] -= 0.5;
-        wd->t_nuc_f[i] -= 0.5;
-      }
-      fgets(buffer, 100, in_file);
-    }
-    for (int i = 0; i < 2*wd->n_shells; i++) {
-      fscanf(in_file, "%*d %*d %*d %*d %*d %*d\n");
-    }
-    wd->wh_hash_f = (wh_list**) calloc(wd->n_sds_p_f*HASH_SIZE, sizeof(wh_list*));
-    p_orbitals = (int*) malloc(sizeof(int)*wd->n_proton_f);
-    n_orbitals = (int*) malloc(sizeof(int)*wd->n_neutron_f);
-    wd->bc_f = malloc(sizeof(float)*wd->n_states_f*wd->n_eig_f);
-    for (int i = 0; i < wd->n_states_f; i++) {
-      int in = 0;
-      int ip = 0;
-      for (int j = 0; j < wd->n_data; j++) {
-        int i_orb;
-        fscanf(in_file, "%d", &i_orb);
-        if (i_orb <= wd->n_shells) {
-          p_orbitals[ip] = i_orb;
-          ip++;
-        } else {
-          n_orbitals[in] = i_orb - wd->n_shells;
-          in++;
-        }
-      }
-      unsigned int pp = p_step(wd->n_shells, wd->n_proton_f, p_orbitals);
-      unsigned int pn;
-      if (in == 0) {pn = 1;
-      } else {
-        pn = p_step(wd->n_shells, wd->n_neutron_f, n_orbitals);
-      }
-      unsigned int p_hash = pp + wd->n_sds_p_f*(pn % HASH_SIZE);
-      if (wd->wh_hash_f[p_hash] == NULL) {
-        wd->wh_hash_f[p_hash] = create_wh_node(pp, pn, i, NULL);
-      } else {
-        wh_append(wd->wh_hash_f[p_hash], pp, pn, i);
-      }
-      fgets(buffer, 100, in_file);
-      for (int j = 0; j < wd->n_eig_f; j++) {
-        fscanf(in_file, "%f\n", &wd->bc_f[j + wd->n_eig_f*i]);
-      }
-    }
-    free(p_orbitals);
-    free(n_orbitals);
-
-    fclose(in_file);
-  }
-
-  in_file = fopen(orbit_file, "r");
-  fgets(buffer, 100, in_file);
-  fscanf(in_file, "%d\n", &wd->n_orbits);
-  printf("The model space contains %d orbitals\n", wd->n_orbits);
-  wd->n_orb = (int*) malloc(sizeof(int)*wd->n_orbits);
-  wd->l_orb = (int*) malloc(sizeof(int)*wd->n_orbits);
-  wd->j_orb = (float*) malloc(sizeof(float)*wd->n_orbits);
-  for (int i = 0; i < wd->n_orbits; i++) {
-    float n_orb_f, l_orb_f;
-    fscanf(in_file, "%f %f %f %*d", &n_orb_f, &l_orb_f, &wd->j_orb[i]);
-    wd->n_orb[i] = (int) n_orb_f;
-    wd->l_orb[i] = (int) l_orb_f;
-  }
-  fclose(in_file);
-  return wd;
-}
-
-
-
-
 */
-
