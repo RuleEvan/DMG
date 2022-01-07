@@ -118,7 +118,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
 
   fread(&wd->jz_i, sizeof(int), 1, in_file);
   fread(&wd->parity_i, sizeof(int), 1, in_file);
-  fread(&wd->wmax_i, sizeof(int), 1, in_file);
+  fread(&wd->w_max_i, sizeof(int), 1, in_file);
   fread(&junk, sizeof(int), 1, in_file);
   fread(&junk, sizeof(int), 1, in_file);
   fread(&junk, sizeof(int), 1, in_file);
@@ -130,8 +130,13 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   else if (wd->parity_i == '-') {printf("The initial state basis is negative parity\n");} 
   else if (wd->parity_i == '0') {printf("The initial state basis contains both positive and negative parity states\n");} 
   else {printf("Error in initial state parity: %c\n", wd->parity_i); exit(0);}
-  printf("The max initial stateexcitation is w_max = %d\n", wd->wmax_i);
-  
+  if (wd->w_max_i > 0) {
+    printf("The max initial state excitation is w_max = %d\n", wd->w_max_i);
+  } else if (wd->w_max_i < 0) {
+    printf("Error: Max excitation w_max < 0. Please define a truncation scheme where w_max is positive\n"); 
+    exit(0);
+  }
+
   wd->e_nuc_i =  (float*) malloc(sizeof(float)*wd->n_eig_i);
   wd->j_nuc_i =  (float*) malloc(sizeof(float)*wd->n_eig_i);
   wd->t_nuc_i =  (float*) malloc(sizeof(float)*wd->n_eig_i);
@@ -190,8 +195,8 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   }
 
   wd->wh_hash_i = (wh_list**) calloc(wd->n_sds_p_i*HASH_SIZE, sizeof(wh_list*));
-  int pp0 = gsl_sf_choose(wd->n_shells, wd->n_proton_i);
-  int pn0 = gsl_sf_choose(wd->n_shells, wd->n_neutron_i);
+  int pp0 = n_choose_k(wd->n_shells, wd->n_proton_i);
+  int pn0 = n_choose_k(wd->n_shells, wd->n_neutron_i);
   for (int i = 0; i < wd->n_states_i; i++) {
     int in = 0;
     int ip = 0;
@@ -303,7 +308,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
 
     fread(&wd->jz_f, sizeof(int), 1, in_file);
     fread(&wd->parity_f, sizeof(int), 1, in_file);
-    fread(&wd->wmax_f, sizeof(int), 1, in_file);
+    fread(&wd->w_max_f, sizeof(int), 1, in_file);
     fread(&junk, sizeof(int), 1, in_file);
     fread(&junk, sizeof(int), 1, in_file);
     fread(&junk, sizeof(int), 1, in_file);
@@ -316,8 +321,12 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
     else if (wd->parity_f == '-') {printf("The final state basis is negative parity\n");} 
     else if (wd->parity_f == '0') {printf("The final state basis contains both positive and negative parity states\n");} 
     else {printf("Error in final state parity: %c\n", wd->parity_f); exit(0);}
-    printf("The max final state excitation is w_max = %d\n", wd->wmax_f);
-
+    if (wd->w_max_f > 0) {
+      printf("The max final state excitation is w_max = %d\n", wd->w_max_f);
+    } else if (wd->w_max_f < 0) {
+      printf("Error: Max excitation w_max < 0. Please define a truncation scheme where w_max > 0.\n");
+      exit(0);
+    }
 
     wd->e_nuc_f = (float*) malloc(sizeof(float)*wd->n_eig_f);
     wd->j_nuc_f = (float*) malloc(sizeof(float)*wd->n_eig_f);
@@ -365,8 +374,8 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
       //printf("%d, %d, %d, %d, %d\n", n_shell, l_shell, j_shell, jz_shell, w_shell);
     }
     wd->wh_hash_f = (wh_list**) calloc(wd->n_sds_p_f*HASH_SIZE, sizeof(wh_list*));
-    int pp0 = gsl_sf_choose(wd->n_shells, wd->n_proton_f);
-    int pn0 = gsl_sf_choose(wd->n_shells, wd->n_neutron_f);
+    int pp0 = n_choose_k(wd->n_shells, wd->n_proton_f);
+    int pn0 = n_choose_k(wd->n_shells, wd->n_neutron_f);
     for (int i = 0; i < wd->n_states_f; i++) {
       int in = 0;
       int ip = 0;

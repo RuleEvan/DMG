@@ -59,7 +59,7 @@ typedef struct wfnData
   long long int n_states_i, n_states_f;
   int n_shells, n_orbits, n_data;
   int n_eig_i, n_eig_f;
-  int parity_i, wmax_i, parity_f, wmax_f;
+  int parity_i, w_max_i, parity_f, w_max_f;
   unsigned int n_sds_p_i, n_sds_p_f, n_sds_n_i, n_sds_n_f;
   wh_list **wh_hash_i, **wh_hash_f;
   float *bc_i, *bc_f;

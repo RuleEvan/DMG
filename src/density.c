@@ -107,35 +107,74 @@ void two_body_density(speedParams *sp) {
   sd_list **n2_list_i = (sd_list**) calloc(2*ns*ns*num_mj_n_i, sizeof(sd_list*));
   sd_list **p2_list_f = (sd_list**) calloc(2*ns*ns*num_mj_p_i, sizeof(sd_list*));
   sd_list **n2_list_f = (sd_list**) calloc(2*ns*ns*num_mj_n_i, sizeof(sd_list*));
+  sd_list **p2_list_if = (sd_list**) calloc(2*ns*ns*num_mj_p_i, sizeof(sd_list*));
+  sd_list **n2_list_if = (sd_list**) calloc(2*ns*ns*num_mj_n_i, sizeof(sd_list*));
+
   int* p1_array_f = (int*) calloc(ns*n_sds_p_int1, sizeof(int));
   int* p2_array_f = (int*) calloc(ns*ns*n_sds_p_int2, sizeof(int));
   int* n1_array_f = (int*) calloc(ns*n_sds_n_int1, sizeof(int));
   int* n2_array_f = (int*) calloc(ns*ns*n_sds_n_int2, sizeof(int));
 
-  // Determine one/two-body jumps, using special routines depending on magnetic isospin change
-  if (wd->same_basis) {
+  if (wd->w_max_i > 0 || wd->w_max_f > 0) {printf("Truncation scheme detected...generating truncated jumps...\n");
+    int w_min_p_i = min_w(ns, wd->n_proton_i, wd->w_shell);
+    int w_min_n_i = min_w(ns, wd->n_neutron_i, wd->w_shell);
+    int w_min_p_f = min_w(ns, wd->n_proton_f, wd->w_shell);
+    int w_min_n_f = min_w(ns, wd->n_neutron_f, wd->w_shell);
+    
+    int w_max_p_i = wd->w_max_i - w_min_n_i;
+    int w_max_n_i = wd->w_max_i - w_min_p_i;
+    int w_max_p_f = wd->w_max_f - w_min_n_f;
+    int w_max_n_f = wd->w_max_f - w_min_p_f;
+
+    if (wd->same_basis) {
     // We assume that same basis implies that magnetic isospin is unchanged
-    printf("Building jumps for delta_MT = 0\n");
-    build_two_body_jumps_i_and_f(wd->n_shells, wd->n_proton_i, mj_min_p_i, mj_max_p_i, num_mj_p_i, wd->n_sds_p_i, n_sds_p_int1, n_sds_p_int2, p1_array_f, p2_array_f, p0_list_i, p1_list_i, p2_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, 18);
-    build_two_body_jumps_i_and_f(wd->n_shells, wd->n_neutron_i, mj_min_n_i, mj_max_n_i, num_mj_n_i, wd->n_sds_n_i, n_sds_n_int1, n_sds_n_int2, n1_array_f, n2_array_f, n0_list_i, n1_list_i, n2_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, 20);
-    printf("Done.\n");
-  } else if (mt_op == 2) {
-    printf("Building jumps for delta_MT = +2\n");
-    build_two_body_jumps_dmtp2(wd->n_shells, wd->n_proton_f, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, wd->n_sds_p_f, p2_list_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, wd->n_sds_n_i, n2_list_i, wd->jz_shell, wd->l_shell);
-    printf("Done.\n");
-  } else if (mt_op == -2) {
-    printf("Building jumps for delta_Mt = -2\n");
-    build_two_body_jumps_dmtp2(wd->n_shells, wd->n_neutron_f, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, wd->n_sds_n_f, n2_list_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, wd->n_sds_p_i, p2_list_i, wd->jz_shell, wd->l_shell);
-    printf("Done.\n");
-  } else if (mt_op == 1) {
-    printf("Building jumps for delta_Mt = +1\n");
-    build_two_body_jumps_dmtp1(wd->n_shells, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, wd->n_proton_f, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_i, p1_list_f, p2_array_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, wd->n_neutron_f, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_i, n2_list_i, n1_array_f, wd->jz_shell, wd->l_shell);    
-    printf("Done.\n");
-  } else if (mt_op == -1) {
-    printf("Building jumps for delta_Mt = -1\n");
-    build_two_body_jumps_dmtp1(wd->n_shells, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, wd->n_neutron_f, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_i, n1_list_f, n2_array_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, wd->n_proton_f, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_i, p2_list_i, p1_array_f, wd->jz_shell, wd->l_shell);
-    printf("Done.\n");
+      printf("Building jumps for delta_MT = 0\n");
+      build_two_body_jumps_dmt0_trunc(wd->n_shells, wd->n_proton_i, mj_min_p_i, mj_max_p_i, num_mj_p_i, wd->n_sds_p_i, n_sds_p_int1, n_sds_p_int2, p1_array_f, p2_array_f, p0_list_i, p1_list_i, p2_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_p_i);
+      build_two_body_jumps_dmt0_trunc(wd->n_shells, wd->n_neutron_i, mj_min_n_i, mj_max_n_i, num_mj_n_i, wd->n_sds_n_i, n_sds_n_int1, n_sds_n_int2, n1_array_f, n2_array_f, n0_list_i, n1_list_i, n2_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_n_i);
+      printf("Done.\n");
+    } else if (mt_op == 2) {
+      printf("Building jumps for delta_MT = +2\n");
+      build_two_body_jumps_dmtp2_trunc(wd->n_shells, wd->n_proton_f, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, wd->n_sds_p_f, p2_list_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, wd->n_sds_n_i, n2_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_p_i, w_max_p_f, w_max_n_i, w_max_n_f);
+      printf("Done.\n");
+    } else if (mt_op == -2) {
+      printf("Building jumps for delta_Mt = -2\n");
+      build_two_body_jumps_dmtp2_trunc(wd->n_shells, wd->n_neutron_f, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, wd->n_sds_n_f, n2_list_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, wd->n_sds_p_i, p2_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_n_i, w_max_n_f, w_max_p_i, w_max_p_f);
+      printf("Done.\n");
+    } else if (mt_op == 1) {
+      printf("Building jumps for delta_Mt = +1\n");
+      build_two_body_jumps_dmtp1_trunc(wd->n_shells, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, wd->n_proton_f, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_i, p1_list_f, p2_array_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, wd->n_neutron_f, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_i, n2_list_i, n1_array_f, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_p_i, w_max_p_f, w_max_n_i, w_max_n_f);    
+      printf("Done.\n");
+    } else if (mt_op == -1) {
+      printf("Building jumps for delta_Mt = -1\n");
+      build_two_body_jumps_dmtp1_trunc(wd->n_shells, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, wd->n_neutron_f, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_i, n1_list_f, n2_array_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, wd->n_proton_f, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_i, p2_list_i, p1_array_f, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_n_i, w_max_n_f, w_max_p_i, w_max_p_f);
+      printf("Done.\n");
+    }
+  } else {
+    if (wd->same_basis) {
+    // We assume that same basis implies that magnetic isospin is unchanged
+      printf("Building jumps for delta_MT = 0\n");
+      build_two_body_jumps_dmt0_alt(wd->n_shells, wd->n_proton_i, mj_min_p_i, mj_max_p_i, num_mj_p_i, wd->n_sds_p_i, n_sds_p_int1, n_sds_p_int2, p1_array_f, p2_array_f, p0_list_i, p1_list_i, p2_list_i, p2_list_if, wd->jz_shell, wd->l_shell);
+      build_two_body_jumps_dmt0_alt(wd->n_shells, wd->n_neutron_i, mj_min_n_i, mj_max_n_i, num_mj_n_i, wd->n_sds_n_i, n_sds_n_int1, n_sds_n_int2, n1_array_f, n2_array_f, n0_list_i, n1_list_i, n2_list_i, n2_list_if, wd->jz_shell, wd->l_shell);
+      printf("Done.\n");
+    } else if (mt_op == 2) {
+      printf("Building jumps for delta_MT = +2\n");
+      build_two_body_jumps_dmtp2(wd->n_shells, wd->n_proton_f, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, wd->n_sds_p_f, p2_list_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, wd->n_sds_n_i, n2_list_i, wd->jz_shell, wd->l_shell);
+      printf("Done.\n");
+    } else if (mt_op == -2) {
+      printf("Building jumps for delta_Mt = -2\n");
+      build_two_body_jumps_dmtp2(wd->n_shells, wd->n_neutron_f, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, wd->n_sds_n_f, n2_list_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, wd->n_sds_p_i, p2_list_i, wd->jz_shell, wd->l_shell);
+      printf("Done.\n");
+    } else if (mt_op == 1) {
+      printf("Building jumps for delta_Mt = +1\n");
+      build_two_body_jumps_dmtp1(wd->n_shells, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, wd->n_proton_f, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_i, p1_list_f, p2_array_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, wd->n_neutron_f, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_i, n2_list_i, n1_array_f, wd->jz_shell, wd->l_shell);    
+      printf("Done.\n");
+    } else if (mt_op == -1) {
+      printf("Building jumps for delta_Mt = -1\n");
+      build_two_body_jumps_dmtp1(wd->n_shells, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, wd->n_neutron_f, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_i, n1_list_f, n2_array_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, wd->n_proton_f, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_i, p2_list_i, p1_array_f, wd->jz_shell, wd->l_shell);
+      printf("Done.\n");
+    }
   }
+
 
   double* cg_fact = (double*) calloc(sp->n_trans, sizeof(double));
   FILE *out_file;
@@ -255,56 +294,70 @@ void two_body_density(speedParams *sp) {
                   float mj3 = wd->jz_shell[d]/2.0;
                   if ((i_orb3 == i_orb4) && (c < d) && (mt3 == mt4)) {continue;}
                   if (mj1 + mj2 != mj3 + mj4) {continue;}
-		  // New test line
-		//  if (mt3 == mt2 && i_orb4 == i_orb2 && mj3 == mj2) {continue;}
-                //  if (mt4 == mt2 && i_orb3 == i_orb2 && mj4 == mj2) {continue;}
                   if (mt1 + mt2 - mt3 - mt4 != mt_op) {continue;}
                   for (int i = 0; i < sp->n_trans; i++) {density[i] = 0.0;}
-                  if ((mt3 == 0.5) && (mt4 == 0.5) && (mt1 == 0.5) && (mt2 == 0.5)) { // 2 proton creation operators + 2 proton annihilation operators
-                      trace_a4_nodes(a, b, c, d, num_mj_p_i, n_sds_p_int2, p2_array_f, p2_list_i, n0_list_i, wd, 0, sp->transition_list, density);
-                  } else if ((mt1 == -0.5) && (mt2 == -0.5) && (mt3 == 0.5) && (mt4 == 0.5)) { // 2 neutron creation operators and two proton ann. operators
-                      trace_a22_nodes(a, b, c, d, num_mj_p_i, p2_list_i, n2_list_f, wd, 0, sp->transition_list, density);
-                  } else if ((mt3 == -0.5) && (mt4 == -0.5) && (mt1 == -0.5) && (mt2 == -0.5)) { //2 n cr. and 2 n ann. operators
-                      trace_a4_nodes(a, b, c, d, num_mj_n_i, n_sds_n_int2, n2_array_f, n2_list_i, p0_list_i, wd, 1, sp->transition_list, density);
-                  } else if ((mt1 == 0.5) && (mt2 == 0.5) && (mt3 == -0.5 && mt4 == -0.5)) {// 2 p cr. and 2 n ann. operators
-                      trace_a22_nodes(a, b, c, d, num_mj_n_i, n2_list_i, p2_list_f, wd, 1, sp->transition_list, density);
-                  } else if ((mt1 == 0.5) && (mt2 == -0.5) && (mt3 == 0.5) && (mt4 == -0.5)) {
-                      trace_a20_nodes(a, d, b, c, num_mj_n_i, n_sds_p_int1, n_sds_n_int1, p1_list_i, n1_list_i, p1_array_f, n1_array_f, wd, sp->transition_list, density);
+		  if (mt_op == 0.0) { // mt_op = 0
+                    if ((mt1 == 0.5) && (mt2 == 0.5) && (mt3 == 0.5) && (mt4 == 0.5)) { // p^dag p^dag p p
+                        trace_two_body_nodes_dmt0_40(a, b, c, d, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n_sds_p_int2, p2_array_f, p2_list_i, n0_list_i, wd, 0, sp->transition_list, density);
+                    } else if ((mt3 == -0.5) && (mt4 == -0.5) && (mt1 == -0.5) && (mt2 == -0.5)) { // n^dag n^dag n n
+                        trace_two_body_nodes_dmt0_40(a, b, c, d, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, n_sds_n_int2, n2_array_f, n2_list_i, p0_list_i, wd, 1, sp->transition_list, density);
+	            } else if ((mt1 == 0.5) && (mt2 == -0.5) && (mt3 == 0.5) && (mt4 == -0.5)) { // p^dag n^dag p n
+                      trace_two_body_nodes_dmt0_22_alt(a, d, b, c, num_mj_p_i, mj_min_p_i, mj_min_p_f, mj_max_p_f, num_mj_n_i, mj_min_n_i, mj_min_n_f, mj_max_n_f, p2_list_if, n2_list_if, wd, sp->transition_list, density, wd->jz_shell);
                       for (int i = 0; i < sp->n_trans; i++) {density[i] *= -1.0;}
-                  } else if ((mt1 == -0.5) && (mt2 == 0.5) && (mt3 == 0.5) && (mt4 == -0.5)) {
-                      trace_a20_nodes(b, d, a, c, num_mj_n_i, n_sds_p_int1, n_sds_n_int1, p1_list_i, n1_list_i, p1_array_f, n1_array_f, wd, sp->transition_list, density);
-                  } else if ((mt1 == 0.5) && (mt2 == -0.5) && (mt3 == -0.5) && (mt4 == 0.5)) {
-                      trace_a20_nodes(a, c, b, d, num_mj_n_i, n_sds_p_int1, n_sds_n_int1,p1_list_i, n1_list_i, p1_array_f, n1_array_f, wd, sp->transition_list, density);
-                  } else if ((mt1 == -0.5) && (mt2 == 0.5) && (mt3 == -0.5) && (mt4 == 0.5)) {
-                      trace_a20_nodes(b, c, a, d, num_mj_n_i, n_sds_p_int1, n_sds_n_int1, p1_list_i, n1_list_i, p1_array_f, n1_array_f, wd, sp->transition_list, density);
+                    } else if ((mt1 == -0.5) && (mt2 == 0.5) && (mt3 == 0.5) && (mt4 == -0.5)) { // n^dag p^dag p n
+                      trace_two_body_nodes_dmt0_22_alt(b, d, a, c, num_mj_p_i, mj_min_p_i, mj_min_p_f, mj_max_p_f, num_mj_n_i, mj_min_n_i, mj_min_n_f, mj_max_n_f, p2_list_if, n2_list_if, wd, sp->transition_list, density, wd->jz_shell);
+                    } else if ((mt1 == 0.5) && (mt2 == -0.5) && (mt3 == -0.5) && (mt4 == 0.5)) { // p^dag n^dag n p
+                      trace_two_body_nodes_dmt0_22_alt(a, c, b, d, num_mj_p_i, mj_min_p_i, mj_min_p_f, mj_max_p_f, num_mj_n_i, mj_min_n_i, mj_min_n_f, mj_max_n_f, p2_list_if, n2_list_if, wd, sp->transition_list, density, wd->jz_shell);
+                    } else if ((mt1 == -0.5) && (mt2 == 0.5) && (mt3 == -0.5) && (mt4 == 0.5)) { // n^dag p^dag n p
+                      trace_two_body_nodes_dmt0_22_alt(b, c, a, d, num_mj_p_i, mj_min_p_i, mj_min_p_f, mj_max_p_f, num_mj_n_i, mj_min_n_i, mj_min_n_f, mj_max_n_f, p2_list_if, n2_list_if, wd, sp->transition_list, density, wd->jz_shell);
                       for (int i = 0; i < sp->n_trans; i++) {density[i] *= -1.0;}
-                  } else if ((mt1 == 0.5) && (mt2 == 0.5) && (mt3 == 0.5) && (mt4 == -0.5)) {
-                      trace_a3a_nodes(a, b, d, c, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n_sds_p_int2, p2_array_f, p1_list_i, n1_list_i, wd, 0, sp->transition_list, density);
+                    }
+                   /* } else if ((mt1 == 0.5) && (mt2 == -0.5) && (mt3 == 0.5) && (mt4 == -0.5)) { // p^dag n^dag p n
+                      trace_two_body_nodes_dmt0_22(a, d, b, c, num_mj_p_i, mj_min_p_i, mj_min_p_f, mj_max_p_f, num_mj_n_i, mj_min_n_i, mj_min_n_f, mj_max_n_f, n_sds_p_int1, n_sds_n_int1, p1_list_i, n1_list_i, p1_array_f, n1_array_f, wd, sp->transition_list, density, wd->jz_shell);
                       for (int i = 0; i < sp->n_trans; i++) {density[i] *= -1.0;}
-                  } else if ((mt1 == 0.5) && (mt2 == 0.5) && (mt3 == -0.5) && (mt4 == 0.5)) {
-                      trace_a3a_nodes(a, b, c, d, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n_sds_p_int2, p2_array_f, p1_list_i, n1_list_i, wd, 0, sp->transition_list, density);
-                      for (int i = 0; i < sp->n_trans; i++) {density[i] *= 1.0;}
-                  } else if ((mt1 == 0.5) && (mt2 == -0.5) && (mt3 == -0.5) && (mt4 == -0.5)) {
-                      trace_a3b_nodes(a, b, c, d, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, n_sds_n_int1, n1_array_f, n2_list_i, p1_list_f, wd, 1, sp->transition_list, density);
-                      for (int i = 0; i < sp->n_trans; i++) {density[i] *= 1.0;}
-                  } else if ((mt1 == -0.5) && (mt2 == 0.5) && (mt3 == -0.5) && (mt4 == -0.5)) {
-                      trace_a3b_nodes(b, a, c, d, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, n_sds_n_int1, n1_array_f, n2_list_i, p1_list_f, wd, 1, sp->transition_list, density);
+                    } else if ((mt1 == -0.5) && (mt2 == 0.5) && (mt3 == 0.5) && (mt4 == -0.5)) { // n^dag p^dag p n
+                      trace_two_body_nodes_dmt0_22(b, d, a, c, num_mj_p_i, mj_min_p_i, mj_min_p_f, mj_max_p_f, num_mj_n_i, mj_min_n_i, mj_min_n_f, mj_max_n_f, n_sds_p_int1, n_sds_n_int1, p1_list_i, n1_list_i, p1_array_f, n1_array_f, wd, sp->transition_list, density, wd->jz_shell);
+                    } else if ((mt1 == 0.5) && (mt2 == -0.5) && (mt3 == -0.5) && (mt4 == 0.5)) { // p^dag n^dag n p
+                      trace_two_body_nodes_dmt0_22(a, c, b, d, num_mj_p_i, mj_min_p_i, mj_min_p_f, mj_max_p_f, num_mj_n_i, mj_min_n_i, mj_min_n_f, mj_max_n_f, n_sds_p_int1, n_sds_n_int1,p1_list_i, n1_list_i, p1_array_f, n1_array_f, wd, sp->transition_list, density, wd->jz_shell);
+                    } else if ((mt1 == -0.5) && (mt2 == 0.5) && (mt3 == -0.5) && (mt4 == 0.5)) { // n^dag p^dag n p
+                      trace_two_body_nodes_dmt0_22(b, c, a, d, num_mj_p_i, mj_min_p_i, mj_min_p_f, mj_max_p_f, num_mj_n_i, mj_min_n_i, mj_min_n_f, mj_max_n_f, n_sds_p_int1, n_sds_n_int1, p1_list_i, n1_list_i, p1_array_f, n1_array_f, wd, sp->transition_list, density, wd->jz_shell);
                       for (int i = 0; i < sp->n_trans; i++) {density[i] *= -1.0;}
-                  } else if ((mt1 == -0.5) && (mt2 == -0.5) && (mt3 == -0.5) && (mt4 == 0.5)) {
-                      trace_a3a_nodes(a, b, d, c, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, n_sds_n_int2, n2_array_f, n1_list_i, p1_list_i, wd, 1, sp->transition_list, density);
-                      for (int i = 0; i < sp->n_trans; i++) {density[i] *= -1.0;}
-                  } else if ((mt1 == -0.5) && (mt2 == -0.5) && (mt3 == 0.5) && (mt4 == -0.5)) {
-                      trace_a3a_nodes(a, b, c, d, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, n_sds_n_int2, n2_array_f, n1_list_i, p1_list_i, wd, 1, sp->transition_list, density);
-                      for (int i = 0; i < sp->n_trans; i++) {density[i] *= 1.0;}
-                  } else if ((mt1 == -0.5) && (mt2 == 0.5) && (mt3 == 0.5) && (mt4 == 0.5)) {
-                      trace_a3b_nodes(a, b, c, d, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n_sds_p_int1, p1_array_f, p2_list_i, n1_list_f, wd, 0, sp->transition_list, density);
-                      for (int i = 0; i < sp->n_trans; i++) {density[i] *= 1.0;}
-                  } else if ((mt1 == 0.5) && (mt2 == -0.5) && (mt3 == 0.5) && (mt4 == 0.5)) {
-                      trace_a3b_nodes(b, a, c, d, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n_sds_p_int1, p1_array_f, p2_list_i, n1_list_f, wd, 0, sp->transition_list, density);
-                      for (int i = 0; i < sp->n_trans; i++) {density[i] *= -1.0;}
-                  }
+                    }*/
 
-               
+		  } else if (mt_op == 1.0) { // mt_op = +1
+                    if ((mt1 == 0.5) && (mt2 == 0.5) && (mt3 == 0.5) && (mt4 == -0.5)) { // p^dag p^dag p n
+                      trace_two_body_nodes_dmtp1_31(a, b, d, c, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n_sds_p_int2, p2_array_f, p1_list_i, n1_list_i, wd, 0, sp->transition_list, density);
+                      for (int i = 0; i < sp->n_trans; i++) {density[i] *= -1.0;}
+                    } else if ((mt1 == 0.5) && (mt2 == 0.5) && (mt3 == -0.5) && (mt4 == 0.5)) { // p^dag p^dag n p
+                      trace_two_body_nodes_dmtp1_31(a, b, c, d, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n_sds_p_int2, p2_array_f, p1_list_i, n1_list_i, wd, 0, sp->transition_list, density);
+                      for (int i = 0; i < sp->n_trans; i++) {density[i] *= 1.0;}
+                    } else if ((mt1 == 0.5) && (mt2 == -0.5) && (mt3 == -0.5) && (mt4 == -0.5)) { // p^dag n^dag n n
+                      trace_two_body_nodes_dmtp1_13(a, b, c, d, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, n_sds_n_int1, n1_array_f, n2_list_i, p1_list_f, wd, 1, sp->transition_list, density);
+                      for (int i = 0; i < sp->n_trans; i++) {density[i] *= 1.0;}
+                    } else if ((mt1 == -0.5) && (mt2 == 0.5) && (mt3 == -0.5) && (mt4 == -0.5)) { // n^dag p^dag n n
+                      trace_two_body_nodes_dmtp1_13(b, a, c, d, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, n_sds_n_int1, n1_array_f, n2_list_i, p1_list_f, wd, 1, sp->transition_list, density);
+                      for (int i = 0; i < sp->n_trans; i++) {density[i] *= -1.0;}
+                    }
+		  } else if (mt_op == -1) { // mt_op = -1
+		    if ((mt1 == -0.5) && (mt2 == -0.5) && (mt3 == -0.5) && (mt4 == 0.5)) { // n^dag n^dag n p
+                      trace_two_body_nodes_dmtp1_31(a, b, d, c, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, n_sds_n_int2, n2_array_f, n1_list_i, p1_list_i, wd, 1, sp->transition_list, density);
+                      for (int i = 0; i < sp->n_trans; i++) {density[i] *= -1.0;}
+                    } else if ((mt1 == -0.5) && (mt2 == -0.5) && (mt3 == 0.5) && (mt4 == -0.5)) { // n^dag n^dag p n
+                      trace_two_body_nodes_dmtp1_31(a, b, c, d, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, n_sds_n_int2, n2_array_f, n1_list_i, p1_list_i, wd, 1, sp->transition_list, density);
+                      for (int i = 0; i < sp->n_trans; i++) {density[i] *= 1.0;}
+                    } else if ((mt1 == -0.5) && (mt2 == 0.5) && (mt3 == 0.5) && (mt4 == 0.5)) { // n^dag p^dag p p
+                      trace_two_body_nodes_dmtp1_13(a, b, c, d, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n_sds_p_int1, p1_array_f, p2_list_i, n1_list_f, wd, 0, sp->transition_list, density);
+                      for (int i = 0; i < sp->n_trans; i++) {density[i] *= 1.0;}
+                    } else if ((mt1 == 0.5) && (mt2 == -0.5) && (mt3 == 0.5) && (mt4 == 0.5)) { // p^dag n^dag p p
+                      trace_two_body_nodes_dmtp1_13(b, a, c, d, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n_sds_p_int1, p1_array_f, p2_list_i, n1_list_f, wd, 0, sp->transition_list, density);
+                      for (int i = 0; i < sp->n_trans; i++) {density[i] *= -1.0;}
+                    }
+                  } else if (mt_op == 2) {  // p^dag p^dag n n
+                      trace_two_body_nodes_dmtp2(a, b, c, d, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n2_list_i, p2_list_f, wd, 1, sp->transition_list, density);
+                  } else if (mt_op == -2) { // n^dag n^dag p p
+                      trace_two_body_nodes_dmtp2(a, b, c, d, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, p2_list_i, n2_list_f, wd, 0, sp->transition_list, density);
+                  } else {printf("Error in mt_op: %d\n", mt_op); exit(0);}
+                  printf("%g %g %g %g %g %g %g %g\n", mj1, mj2, mj3, mj4, mt1, mt2, mt3, mt4); 
                   for (int j12 = j_min_12; j12 <= j_max_12; j12++) {
                     if ((mj1 + mj2 > j12) || (mj1 + mj2 < -j12)) {continue;}
                     float cg_j12 = clebsch_gordan(j1, j2, j12, mj1, mj2, mj1 + mj2);
@@ -486,26 +539,54 @@ void one_body_density(speedParams* sp) {
   sd_list **n1_list_f = (sd_list**) calloc(2*ns*num_mj_n_i, sizeof(sd_list*));
   int* p1_array_f = (int*) calloc(ns*n_sds_p_int, sizeof(int));
   int* n1_array_f = (int*) calloc(ns*n_sds_n_int, sizeof(int));
-  int w_cut = 100;
-  if (wd->same_basis) {
-    printf("Building initial and final state proton jumps...\n");
-    build_one_body_jumps_i_and_f(wd->n_shells, wd->n_proton_i, mj_min_p_i, mj_max_p_i, num_mj_p_i, wd->n_sds_p_i, n_sds_p_int, p1_array_f, p0_list_i, p1_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_cut); 
-    printf("Done.\n");
+  
+  if (wd->w_max_i > 0 || wd->w_max_f > 0) {printf("Truncation scheme detected...generating truncated jumps...\n");
+    int w_min_p_i = min_w(ns, wd->n_proton_i, wd->w_shell);
+    int w_min_n_i = min_w(ns, wd->n_neutron_i, wd->w_shell);
+    int w_min_p_f = min_w(ns, wd->n_proton_f, wd->w_shell);
+    int w_min_n_f = min_w(ns, wd->n_neutron_f, wd->w_shell);
+    
+    int w_max_p_i = wd->w_max_i - w_min_n_i;
+    int w_max_n_i = wd->w_max_i - w_min_p_i;
+    int w_max_p_f = wd->w_max_f - w_min_n_f;
+    int w_max_n_f = wd->w_max_f - w_min_p_f;
 
-    printf("Building initial and final state neutron jumps...\n");
-    build_one_body_jumps_i_and_f(wd->n_shells, wd->n_neutron_i, mj_min_n_i, mj_max_n_i, num_mj_n_i, wd->n_sds_n_i, n_sds_n_int, n1_array_f, n0_list_i, n1_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_cut); 
-    printf("Done.\n");
-  } else if (mt_op == 1) {
-    printf("Delta MT = +1\n");
-    build_one_body_jumps_dmtp1(wd->n_shells, wd->n_proton_f, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, n1_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_cut);
-  } else if (mt_op == -1) {
-    printf("Delta MT = -1\n");
-    build_one_body_jumps_dmtp1(wd->n_shells, wd->n_neutron_f, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, p1_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_cut);
-  } else {printf("Error in delta MT\n"); exit(0);} 
- 
+
+    if (wd->same_basis) {
+      printf("Building initial and final state proton jumps...\n");
+      build_one_body_jumps_dmt0_trunc(wd->n_shells, wd->n_proton_i, mj_min_p_i, mj_max_p_i, num_mj_p_i, wd->n_sds_p_i, n_sds_p_int, p1_array_f, p0_list_i, p1_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_p_i); 
+      printf("Done.\n");
+
+      printf("Building initial and final state neutron jumps...\n");
+      build_one_body_jumps_dmt0_trunc(wd->n_shells, wd->n_neutron_i, mj_min_n_i, mj_max_n_i, num_mj_n_i, wd->n_sds_n_i, n_sds_n_int, n1_array_f, n0_list_i, n1_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_n_i); 
+      printf("Done.\n");
+    } else if (mt_op == 1) {
+      printf("Delta MT = +1\n");
+      build_one_body_jumps_dmtp1_trunc(wd->n_shells, wd->n_proton_f, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, n1_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_p_i, w_max_p_f, w_max_n_i, w_max_n_f);
+    } else if (mt_op == -1) {
+      printf("Delta MT = -1\n");
+      build_one_body_jumps_dmtp1_trunc(wd->n_shells, wd->n_neutron_f, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, p1_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_n_i, w_max_n_f, w_max_p_i, w_max_p_f);
+    } else {printf("Error in delta MT\n"); exit(0);} 
+  } else {
+  if (wd->same_basis) {
+      printf("Building initial and final state proton jumps...\n");
+      build_one_body_jumps_dmt0(wd->n_shells, wd->n_proton_i, mj_min_p_i, mj_max_p_i, num_mj_p_i, wd->n_sds_p_i, n_sds_p_int, p1_array_f, p0_list_i, p1_list_i, wd->jz_shell, wd->l_shell); 
+      printf("Done.\n");
+
+      printf("Building initial and final state neutron jumps...\n");
+      build_one_body_jumps_dmt0(wd->n_shells, wd->n_neutron_i, mj_min_n_i, mj_max_n_i, num_mj_n_i, wd->n_sds_n_i, n_sds_n_int, n1_array_f, n0_list_i, n1_list_i, wd->jz_shell, wd->l_shell); 
+      printf("Done.\n");
+    } else if (mt_op == 1) {
+      printf("Delta MT = +1\n");
+      build_one_body_jumps_dmtp1(wd->n_shells, wd->n_proton_f, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, n1_list_i, wd->jz_shell, wd->l_shell);
+    } else if (mt_op == -1) {
+      printf("Delta MT = -1\n");
+      build_one_body_jumps_dmtp1(wd->n_shells, wd->n_neutron_f, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, p1_list_i, wd->jz_shell, wd->l_shell);
+    } else {printf("Error in delta MT\n"); exit(0);} 
+  }
   // Loop over transitions
   eigen_list* trans = sp->transition_list;
-  eigen_list* new_trans;
+  eigen_list* new_trans = malloc(sizeof(*new_trans));
   int i_trans = 0;
   while (trans != NULL) {
     int psi_i = trans->eig_i;
@@ -623,13 +704,13 @@ void one_body_density(speedParams* sp) {
             density[i] = 0.0;
           }
           if ((mt1 == 0.5) && (mt2 == 0.5)) {
-            trace_1body_t0_nodes(a, b, num_mj_p_i, n_sds_p_int, p1_array_f, p1_list_i, n0_list_i, wd, 0, sp->transition_list, density);
+            trace_one_body_nodes_dmt0(a, b, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n_sds_p_int, p1_array_f, p1_list_i, n0_list_i, wd, 0, sp->transition_list, density);
           } else if ((mt1 == -0.5) && (mt2 == -0.5)) {
-            trace_1body_t0_nodes(a, b, num_mj_n_i, n_sds_n_int, n1_array_f, n1_list_i, p0_list_i, wd, 1, sp->transition_list, density);
+            trace_one_body_nodes_dmt0(a, b, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, n_sds_n_int, n1_array_f, n1_list_i, p0_list_i, wd, 1, sp->transition_list, density);
           } else if ((mt1 == 0.5) && (mt2 == -0.5)) {
-            trace_1body_t2_nodes(a, b, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, n1_list_i, p1_list_f, wd, 1, sp->transition_list, density);
+            trace_one_body_nodes_dmtp1(a, b, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, n1_list_i, p1_list_f, wd, 1, sp->transition_list, density);
           } else {
-            trace_1body_t2_nodes(a, b, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, p1_list_i, n1_list_f, wd, 0, sp->transition_list, density);
+            trace_one_body_nodes_dmtp1(a, b, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, p1_list_i, n1_list_f, wd, 0, sp->transition_list, density);
           }
           for (int i = 0; i < sp->n_trans; i++) {
             int j_op = j_op_arr[i];
@@ -769,7 +850,7 @@ void one_body_density(speedParams* sp) {
   return;
 }
 
-void trace_a3b_nodes(int a, int b, int c, int d, int num_mj_1, float mj_min_1, int num_mj_2, float mj_min_2, int n_sds_int1, int* p1_array_f, sd_list** p2_list_i, sd_list** n1_list_f, wfnData* wd, int i_op, eigen_list* transition, double* density) {
+void trace_two_body_nodes_dmtp1_13(int a, int b, int c, int d, int num_mj_1, float mj_min_1, int num_mj_2, float mj_min_2, int n_sds_int1, int* p1_array_f, sd_list** p2_list_i, sd_list** n1_list_f, wfnData* wd, int i_op, eigen_list* transition, double* density) {
   int ns = wd->n_shells;
 
   for (int imj1 = 0; imj1 < num_mj_1; imj1++) {
@@ -885,7 +966,7 @@ void trace_a3b_nodes(int a, int b, int c, int d, int num_mj_1, float mj_min_1, i
 }
 
 
-void trace_a3a_nodes(int a, int b, int c, int d, int num_mj_1, float mj_min_1, int num_mj_2, float mj_min_2, int n_sds_int2, int* p2_array_f, sd_list** p1_list_i, sd_list** n1_list_i, wfnData* wd, int i_op, eigen_list* transition, double* density) {
+void trace_two_body_nodes_dmtp1_31(int a, int b, int c, int d, int num_mj_1, float mj_min_1, int num_mj_2, float mj_min_2, int n_sds_int2, int* p2_array_f, sd_list** p1_list_i, sd_list** n1_list_i, wfnData* wd, int i_op, eigen_list* transition, double* density) {
   int ns = wd->n_shells;
  
   for (int imj1 = 0; imj1 < num_mj_1; imj1++) {
@@ -1003,126 +1084,282 @@ void trace_a3a_nodes(int a, int b, int c, int d, int num_mj_1, float mj_min_1, i
 }
 
 
-void trace_a4_nodes(int a, int b, int c, int d, int num_mj, int n_sds_int2, int* p2_array_f, sd_list** p2_list_i, wf_list** n0_list_i, wfnData* wd, int i_op, eigen_list* transition, double* density) {
+void trace_two_body_nodes_dmt0_40(int a, int b, int c, int d, int num_mj_p_i, float mj_min_p_i, int num_mj_n_i, float mj_min_n_i, int n_sds_int2, int* p2_array_f, sd_list** p2_list_i, wf_list** n0_list_i, wfnData* wd, int i_op, eigen_list* transition, double* density) {
   int ns = wd->n_shells;
 
-  for (int ipar = 0; ipar <= 1; ipar++) {
-    for (int imj = 0; imj < num_mj; imj++) {
-      sd_list* node1 = p2_list_i[ipar + 2*(imj + num_mj*(c + d*ns))];
-      while (node1 != NULL) {
-        unsigned int ppn = node1->pn;
-        unsigned int ppi = node1->pi;
-        int phase1 = node1->phase;
-        int ppf = p2_array_f[(ppn - 1) + n_sds_int2*(a + ns*b)];
-        if (ppf == 0) {node1 = node1->next; continue;}
-        int phase2 = 1;
-        node1 = node1->next;
-        if (ppf < 0) {
-          ppf *= -1;
-          phase2 = -1;
-        }
-        wf_list* node2 = n0_list_i[ipar + 2*(num_mj - imj - 1)];
-        while (node2 != NULL) {
-          int pn = node2->p;
-          int index_i = -1;
-          int index_f = -1;
+  printf("Calling 40\n"); 
 
-          if (i_op == 0) {
-            unsigned int p_hash_i = ppi + wd->n_sds_p_i*(pn % HASH_SIZE);
-            wh_list* node3 = wd->wh_hash_i[p_hash_i];
-            while (node3 != NULL) {
-              if ((pn == node3->pn) && (ppi == node3->pp)) {
-                index_i = node3->index;
-                break;
-              }
-              node3 = node3->next;
-            }
-            if (index_i < 0) {node2 = node2->next; continue;}
+  for (int imjp = 0; imjp < num_mj_p_i; imjp++) {
+    float mjp = imjp + mj_min_p_i;
+    for (int imjn = 0; imjn < num_mj_n_i; imjn++) {
+      float mjn = imjn + mj_min_n_i;
+      if ((mjp + mjn != 0) && (mjp + mjn != 0.5)) {continue;}
+      for (int ipar_p = 0; ipar_p <= 1; ipar_p++) {
+        int ipar_n;
+	if (wd->parity_i == '+') {
+	  if (ipar_p == 0) {
+		  ipar_n = 0;
+	  } else {
+		  ipar_n = 1;
+	  }
+	} else if (wd->parity_i == '-') {
+		if (ipar_p == 0) {
+			ipar_n = 1;
+		} else {
+			ipar_n = 0;
+		}
+	} else {printf("Parity error\n"); exit(0);}
 
-            unsigned int p_hash_f = ppf + wd->n_sds_p_f*(pn % HASH_SIZE);
-            node3 = wd->wh_hash_f[p_hash_f];
-            while (node3 != NULL) {
-              if ((pn == node3->pn) && (ppf == node3->pp)) {
-                index_f = node3->index;
-                break;
-              }
-              node3 = node3->next;
-            }
-            if (index_f < 0) {node2 = node2->next; continue;}
-            eigen_list* eig_pair = transition;
-            int i_trans = 0;
-            while (eig_pair != NULL) {
-              int psi_i = eig_pair->eig_i;
-              int psi_f = eig_pair->eig_f;
-	      density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
-              i_trans++;
-              eig_pair = eig_pair->next;
-            }
-           } else {
-            unsigned int p_hash_i = pn + wd->n_sds_p_i*(ppi % HASH_SIZE);
-            wh_list* node3 = wd->wh_hash_i[p_hash_i];
-            while (node3 != NULL) {
-              if ((pn == node3->pp) && (ppi == node3->pn)) {
-                index_i = node3->index;
-                break;
-              }
-              node3 = node3->next;
-            }
-            if (index_i < 0) {node2 = node2->next; continue;}
 
-            unsigned int p_hash_f = pn + wd->n_sds_p_f*(ppf % HASH_SIZE);
-            node3 = wd->wh_hash_f[p_hash_f];
-            while (node3 != NULL) {
-              if ((pn == node3->pp) && (ppf == node3->pn)) {
-                index_f = node3->index;
-                break;
+        sd_list* node1 = p2_list_i[ipar_p + 2*(imjp + num_mj_p_i*(c + d*ns))];
+        while (node1 != NULL) {
+          unsigned int ppn = node1->pn;
+          unsigned int ppi = node1->pi;
+          int phase1 = node1->phase;
+          int ppf = p2_array_f[(ppn - 1) + n_sds_int2*(a + ns*b)];
+          if (ppf == 0) {node1 = node1->next; continue;}
+          int phase2 = 1;
+          node1 = node1->next;
+          if (ppf < 0) {
+            ppf *= -1;
+            phase2 = -1;
+          }
+          wf_list* node2 = n0_list_i[ipar_n + 2*imjn];
+          while (node2 != NULL) {
+            int pn = node2->p;
+            int index_i = -1;
+            int index_f = -1;
+
+            if (i_op == 0) {
+              unsigned int p_hash_i = ppi + wd->n_sds_p_i*(pn % HASH_SIZE);
+              wh_list* node3 = wd->wh_hash_i[p_hash_i];
+              while (node3 != NULL) {
+                if ((pn == node3->pn) && (ppi == node3->pp)) {
+                  index_i = node3->index;
+                  break;
+                }
+                node3 = node3->next;
               }
-              node3 = node3->next;
-            }
-            if (index_f < 0) {node2 = node2->next; continue;}
-            eigen_list* eig_pair = transition;
-            int i_trans = 0;
-            while (eig_pair != NULL) {
-              int psi_i = eig_pair->eig_i;
-              int psi_f = eig_pair->eig_f;
-	      density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
-              i_trans++;
-              eig_pair = eig_pair->next;
-            }
-          } 
-          node2 = node2->next;
-        } 
+              if (index_i < 0) {node2 = node2->next; continue;}
+
+              unsigned int p_hash_f = ppf + wd->n_sds_p_f*(pn % HASH_SIZE);
+              node3 = wd->wh_hash_f[p_hash_f];
+              while (node3 != NULL) {
+                if ((pn == node3->pn) && (ppf == node3->pp)) {
+                  index_f = node3->index;
+                  break;
+                }
+                node3 = node3->next;
+              }
+              if (index_f < 0) {node2 = node2->next; continue;}
+              eigen_list* eig_pair = transition;
+              int i_trans = 0;
+              while (eig_pair != NULL) {
+                int psi_i = eig_pair->eig_i;
+                int psi_f = eig_pair->eig_f;
+	        density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
+                i_trans++;
+                eig_pair = eig_pair->next;
+              }
+             } else {
+              unsigned int p_hash_i = pn + wd->n_sds_p_i*(ppi % HASH_SIZE);
+              wh_list* node3 = wd->wh_hash_i[p_hash_i];
+              while (node3 != NULL) {
+                if ((pn == node3->pp) && (ppi == node3->pn)) {
+                  index_i = node3->index;
+                  break;
+                }
+                node3 = node3->next;
+              }
+              if (index_i < 0) {node2 = node2->next; continue;}
+
+              unsigned int p_hash_f = pn + wd->n_sds_p_f*(ppf % HASH_SIZE);
+              node3 = wd->wh_hash_f[p_hash_f];
+              while (node3 != NULL) {
+                if ((pn == node3->pp) && (ppf == node3->pn)) {
+                  index_f = node3->index;
+                  break;
+                }
+                node3 = node3->next;
+              }
+              if (index_f < 0) {node2 = node2->next; continue;}
+              eigen_list* eig_pair = transition;
+              int i_trans = 0;
+              while (eig_pair != NULL) {
+                int psi_i = eig_pair->eig_i;
+                int psi_f = eig_pair->eig_f;
+	        density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
+                i_trans++;
+                eig_pair = eig_pair->next;
+              }
+            } 
+            node2 = node2->next;
+          }
+	} 
       }
     }
    }
   return;
 }
 
-void trace_a22_nodes(int a, int b, int c, int d, int num_mj, sd_list** a2_list_i, sd_list** a2_list_f, wfnData* wd, int i_op, eigen_list* transition, double* density) {
+void trace_two_body_nodes_dmtp2(int a, int b, int c, int d, int num_mj_p_i, float mj_min_p_i, int num_mj_n_i, float mj_min_n_i, sd_list** n2_list_i, sd_list** p2_list_f, wfnData* wd, int i_op, eigen_list* transition, double* density) {
 /* 
 
 */
   int ns = wd->n_shells;
-  for (int ipar = 0; ipar <= 1; ipar++) {
-    for (int imj = 0; imj < num_mj; imj++) {
-      sd_list* node1 = a2_list_i[ipar + 2*(imj + num_mj*(c + d*ns))];
-      // Loop over final states resulting from 2x a_op
-      while (node1 != NULL) {
-        unsigned int ppf = node1->pn; // Get final state p_f
-        unsigned int ppi = node1->pi; // Get initial state p_i
-        int phase1 = node1->phase;
-        // Get list of n_i associated to p_i
-        sd_list* node2 = a2_list_f[ipar + 2*(num_mj - imj - 1 + num_mj*(a + b*ns))]; //hash corresponds to a_op operators
-        // Loop over n_f  
-        while (node2 != NULL) {
-          unsigned int pni = node2->pi;
-          unsigned int pnf = node2->pn;
-          int phase2 = node2->phase;
-          int index_i = -1;
-          int index_f = -1;
-          if (i_op == 0) {
-            unsigned int p_hash_i = ppi + wd->n_sds_p_i*(pni % HASH_SIZE);
-            wh_list* node3 = wd->wh_hash_i[p_hash_i];
+  for (int imjp = 0; imjp < num_mj_p_i; imjp++) {
+    float mjp = imjp + mj_min_p_i;
+    for (int imjn = 0; imjn < num_mj_n_i; imjn++) {
+      float mjn = imjn + mj_min_n_i;
+      if ((mjp + mjn != 0) && (mjp + mjn != 0.5)) {continue;}
+      for (int ipar_p = 0; ipar_p <= 1; ipar_p++) {
+        int ipar_n;
+	if (wd->parity_i == '+') {
+	  if (ipar_p == 0) {
+		  ipar_n = 0;
+	  } else {
+		  ipar_n = 1;
+	  }
+	} else if (wd->parity_i == '-') {
+		if (ipar_p == 0) {
+			ipar_n = 1;
+		} else {
+			ipar_n = 0;
+		}
+	} else {printf("Parity error\n"); exit(0);}
+
+        sd_list* node1 = n2_list_i[ipar_n + 2*(imjn + num_mj_n_i*(c + d*ns))];
+        // Loop over final states resulting from 2x a_op
+        while (node1 != NULL) {
+          unsigned int ppf = node1->pn; // Get final state p_f
+          unsigned int ppi = node1->pi; // Get initial state p_i
+          int phase1 = node1->phase;
+          // Get list of n_i associated to p_i
+          sd_list* node2 = p2_list_f[ipar_p + 2*(imjp + num_mj_p_i*(a + b*ns))]; //hash corresponds to a_op operators
+          // Loop over n_f  
+          while (node2 != NULL) {
+            unsigned int pni = node2->pi;
+            unsigned int pnf = node2->pn;
+            int phase2 = node2->phase;
+            int index_i = -1;
+            int index_f = -1;
+            if (i_op == 0) {
+              unsigned int p_hash_i = ppi + wd->n_sds_p_i*(pni % HASH_SIZE);
+              wh_list* node3 = wd->wh_hash_i[p_hash_i];
+              while (node3 != NULL) {
+                if ((pni == node3->pn) && (ppi == node3->pp)) {
+                  index_i = node3->index;
+                  break;
+                }
+                node3 = node3->next;
+              }
+              if (index_i < 0) {node2 = node2->next; continue;}
+
+              unsigned int p_hash_f = ppf + wd->n_sds_p_f*(pnf % HASH_SIZE);
+              node3 = wd->wh_hash_f[p_hash_f];
+              while (node3 != NULL) {
+                if ((pnf == node3->pn) && (ppf == node3->pp)) {
+                  index_f = node3->index;
+                  break;
+                }
+                node3 = node3->next;
+              }
+              if (index_f < 0) {node2 = node2->next; continue;}
+              eigen_list* eig_pair = transition;
+              int i_trans = 0;
+              while (eig_pair != NULL) {
+                int psi_i = eig_pair->eig_i;
+                int psi_f = eig_pair->eig_f;
+	        density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
+                i_trans++;
+                eig_pair = eig_pair->next;
+              }
+             } else {
+              unsigned int p_hash_i = pni + wd->n_sds_p_i*(ppi % HASH_SIZE);
+              wh_list* node3 = wd->wh_hash_i[p_hash_i];
+              while (node3 != NULL) {
+                if ((pni == node3->pp) && (ppi == node3->pn)) {
+                  index_i = node3->index;
+                  break;
+                }
+                node3 = node3->next;
+              }
+              if (index_i < 0) {node2 = node2->next; continue;}
+
+              unsigned int p_hash_f = pnf + wd->n_sds_p_f*(ppf % HASH_SIZE);
+              node3 = wd->wh_hash_f[p_hash_f];
+              while (node3 != NULL) {
+                if ((pnf == node3->pp) && (ppf == node3->pn)) {
+                  index_f = node3->index;
+                  break;
+                }
+                node3 = node3->next;
+              }
+              if (index_f < 0) {node2 = node2->next; continue;}
+              eigen_list* eig_pair = transition;
+              int i_trans = 0;
+              while (eig_pair != NULL) {
+                int psi_i = eig_pair->eig_i;
+                int psi_f = eig_pair->eig_f;
+	        density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
+                i_trans++;
+                eig_pair = eig_pair->next;
+              }
+            } 
+            node2 = node2->next;
+          }
+          node1 = node1->next;
+        }
+      }
+    }  
+  }
+  return;
+}
+
+void trace_two_body_nodes_dmt0_22_alt(int a, int b, int c, int d, int num_mj_p_i, float mj_min_p_i, float mj_min_p_f, float mj_max_p_f, int num_mj_n_i, float mj_min_n_i, float mj_min_n_f, float mj_max_n_f, sd_list** p2_list_if, sd_list** n2_list_if, wfnData* wd, eigen_list* transition, double* density, int* jz_shell) {
+  printf("Calling 22\n");
+  int ns = wd->n_shells;
+  for (int imjp = 0; imjp < num_mj_p_i; imjp++) {
+    float mjp = imjp + mj_min_p_i;
+    if (mjp + jz_shell[a]/2.0 - jz_shell[b]/2.0 > mj_max_p_f || mjp + jz_shell[a]/2.0 - jz_shell[b]/2.0 < mj_min_p_f) {continue;}
+    for (int imjn = 0; imjn < num_mj_n_i; imjn++) {
+      float mjn = imjn + mj_min_n_i;
+      if ((mjp + mjn != 0) && (mjp + mjn != 0.5)) {continue;}
+      if (mjn + jz_shell[c]/2.0 - jz_shell[d]/2.0 > mj_max_n_f || mjn + jz_shell[c]/2.0 - jz_shell[d]/2.0 < mj_min_n_f) {continue;}
+      for (int ipar_p = 0; ipar_p <= 1; ipar_p++) {
+        int ipar_n;
+	if (wd->parity_i == '+') {
+	  if (ipar_p == 0) {
+		  ipar_n = 0;
+	  } else {
+		  ipar_n = 1;
+	  }
+	} else if (wd->parity_i == '-') {
+		if (ipar_p == 0) {
+			ipar_n = 1;
+		} else {
+			ipar_n = 0;
+		}
+	} else {printf("Parity error\n"); exit(0);}
+
+        sd_list* node_pi = p2_list_if[ipar_p + 2*(imjp + num_mj_p_i*(b + ns*a))]; // Get proton states resulting from p_b |p_i>
+        while (node_pi != NULL) {
+          int ppi = node_pi->pi; 
+          int ppf = node_pi->pn; // Get pn = p_a |p_i>
+          int phase1 = node_pi->phase;
+          
+	  sd_list* node_ni = n2_list_if[ipar_n + 2*(imjn + num_mj_n_i*(d + ns*c))]; // Get neutron states resulting from n_d |n_i>
+          while (node_ni != NULL) {
+            int pni = node_ni->pi;
+            int pnf = node_ni->pn; // Get nn = n_d |n_i>
+            int phase2 = node_ni->phase;
+            
+	    unsigned int p_hash_i = ppi + wd->n_sds_p_i*(pni % HASH_SIZE);
+            unsigned int p_hash_f = ppf + wd->n_sds_p_f*(pnf % HASH_SIZE);
+            wh_list *node3 = wd->wh_hash_i[p_hash_i]; // hash corresponds to a_op operators
+   
+            int index_i = -1;
+            int index_f = -1;
             while (node3 != NULL) {
               if ((pni == node3->pn) && (ppi == node3->pp)) {
                 index_i = node3->index;
@@ -1130,9 +1367,7 @@ void trace_a22_nodes(int a, int b, int c, int d, int num_mj, sd_list** a2_list_i
               }
               node3 = node3->next;
             }
-            if (index_i < 0) {node2 = node2->next; continue;}
-
-            unsigned int p_hash_f = ppf + wd->n_sds_p_f*(pnf % HASH_SIZE);
+            if (index_i < 0) {node_ni = node_ni->next; printf("Not found\n"); continue;}
             node3 = wd->wh_hash_f[p_hash_f];
             while (node3 != NULL) {
               if ((pnf == node3->pn) && (ppf == node3->pp)) {
@@ -1141,135 +1376,124 @@ void trace_a22_nodes(int a, int b, int c, int d, int num_mj, sd_list** a2_list_i
               }
               node3 = node3->next;
             }
-            if (index_f < 0) {node2 = node2->next; continue;}
+            if (index_f < 0) {node_ni = node_ni->next; printf("Not found\n"); continue;}
             eigen_list* eig_pair = transition;
             int i_trans = 0;
             while (eig_pair != NULL) {
               int psi_i = eig_pair->eig_i;
               int psi_f = eig_pair->eig_f;
-	      density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
+              density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
               i_trans++;
               eig_pair = eig_pair->next;
             }
-           } else {
-            unsigned int p_hash_i = pni + wd->n_sds_p_i*(ppi % HASH_SIZE);
-            wh_list* node3 = wd->wh_hash_i[p_hash_i];
-            while (node3 != NULL) {
-              if ((pni == node3->pp) && (ppi == node3->pn)) {
-                index_i = node3->index;
-                break;
-              }
-              node3 = node3->next;
-            }
-            if (index_i < 0) {node2 = node2->next; continue;}
-
-            unsigned int p_hash_f = pnf + wd->n_sds_p_f*(ppf % HASH_SIZE);
-            node3 = wd->wh_hash_f[p_hash_f];
-            while (node3 != NULL) {
-              if ((pnf == node3->pp) && (ppf == node3->pn)) {
-                index_f = node3->index;
-                break;
-              }
-              node3 = node3->next;
-            }
-            if (index_f < 0) {node2 = node2->next; continue;}
-            eigen_list* eig_pair = transition;
-            int i_trans = 0;
-            while (eig_pair != NULL) {
-              int psi_i = eig_pair->eig_i;
-              int psi_f = eig_pair->eig_f;
-	      density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
-              i_trans++;
-              eig_pair = eig_pair->next;
-            }
-          } 
-          node2 = node2->next;
+            node_ni = node_ni->next;
+          }
+          node_pi = node_pi->next;
         }
-        node1 = node1->next;
-      }
-    }  
-  }
-  return;
-}
-
-void trace_a20_nodes(int a, int b, int c, int d, int num_mj, int n_sds_p_int1, int n_sds_n_int1, sd_list** p1_list_i, sd_list** n1_list_i, int* p1_array_f, int* n1_array_f, wfnData* wd, eigen_list* transition, double* density) {
-
-  int ns = wd->n_shells;
-  for (int ipar = 0; ipar <= 1; ipar++) {
-    for (int imj = 0; imj < num_mj; imj++) {
-      sd_list* node_pi = p1_list_i[ipar + 2*(imj + num_mj*b)]; // Get proton states resulting from p_b |p_i>
-      while (node_pi != NULL) {
-        int ppi = node_pi->pi; 
-        int ppn = node_pi->pn; // Get pn = p_a |p_i>
-        int phase1 = node_pi->phase;
-        int phase2 = 1;
-        int ppf = p1_array_f[(ppn - 1) + n_sds_p_int1*a]; // Get pf such that pn = p_a |p_f>
-        if (ppf == 0) {node_pi = node_pi->next; continue;}
-        if (ppf < 0) {
-          ppf *= -1;
-          phase2 = -1;
-        }
-        sd_list* node_ni = n1_list_i[ipar + 2*(num_mj - imj - 1 + num_mj*d)]; // Get neutron states resulting from n_d |n_i>
-        while (node_ni != NULL) {
-          int pni = node_ni->pi;
-          int pnn = node_ni->pn; // Get nn = n_d |n_i>
-          int phase3 = node_ni->phase;
-          int phase4 = 1;
-          int pnf = n1_array_f[(pnn - 1) + n_sds_n_int1*c];
-          if (pnf == 0) {node_ni = node_ni->next; continue;}
-          if (pnf < 0) {
-            pnf *= -1;
-            phase4 = -1;
-          }
-          unsigned int p_hash_i = ppi + wd->n_sds_p_i*(pni % HASH_SIZE);
-          unsigned int p_hash_f = ppf + wd->n_sds_p_f*(pnf % HASH_SIZE);
-          wh_list *node3 = wd->wh_hash_i[p_hash_i]; // hash corresponds to a_op operators
-   
-          int index_i = -1;
-          int index_f = -1;
-          while (node3 != NULL) {
-            if ((pni == node3->pn) && (ppi == node3->pp)) {
-              index_i = node3->index;
-              break;
-            }
-            node3 = node3->next;
-          }
-          if (index_i < 0) {node_ni = node_ni->next; continue;}
-          node3 = wd->wh_hash_f[p_hash_f];
-          while (node3 != NULL) {
-            if ((pnf == node3->pn) && (ppf == node3->pp)) {
-              index_f = node3->index;
-              break;
-            }
-            node3 = node3->next;
-          }
-          if (index_f < 0) {node_ni = node_ni->next; continue;}
-          eigen_list* eig_pair = transition;
-          int i_trans = 0;
-          while (eig_pair != NULL) {
-            int psi_i = eig_pair->eig_i;
-            int psi_f = eig_pair->eig_f;
-            density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2*phase3*phase4;
-            i_trans++;
-            eig_pair = eig_pair->next;
-          }
-          node_ni = node_ni->next;
-        }
-        node_pi = node_pi->next;
       }
     } 
   } 
   return;
 }
 
-void build_two_body_jumps_i_and_f(int n_s, int n_p, float mj_min, float mj_max, int num_mj, int n_sds_i, int n_sds_int1, int n_sds_int2, int*a1_array_f, int* a2_array_f, wf_list** a0_list_i, sd_list** a1_list_i, sd_list** a2_list_i, int* jz_shell, int* l_shell, int* w_shell, int w_max) {
+
+void trace_two_body_nodes_dmt0_22(int a, int b, int c, int d, int num_mj_p_i, float mj_min_p_i, float mj_min_p_f, float mj_max_p_f, int num_mj_n_i, float mj_min_n_i, float mj_min_n_f, float mj_max_n_f, int n_sds_p_int1, int n_sds_n_int1, sd_list** p1_list_i, sd_list** n1_list_i, int* p1_array_f, int* n1_array_f, wfnData* wd, eigen_list* transition, double* density, int* jz_shell) {
+  printf("Calling 22\n");
+  for (int imjp = 0; imjp < num_mj_p_i; imjp++) {
+    float mjp = imjp + mj_min_p_i;
+    if (mjp + jz_shell[a]/2.0 - jz_shell[b]/2.0 > mj_max_p_f || mjp + jz_shell[a]/2.0 - jz_shell[b]/2.0 < mj_min_p_f) {continue;}
+    for (int imjn = 0; imjn < num_mj_n_i; imjn++) {
+      float mjn = imjn + mj_min_n_i;
+      if ((mjp + mjn != 0) && (mjp + mjn != 0.5)) {continue;}
+      if (mjn + jz_shell[c]/2.0 - jz_shell[d]/2.0 > mj_max_n_f || mjn + jz_shell[c]/2.0 - jz_shell[d]/2.0 < mj_min_n_f) {continue;}
+      for (int ipar_p = 0; ipar_p <= 1; ipar_p++) {
+        int ipar_n;
+	if (wd->parity_i == '+') {
+	  if (ipar_p == 0) {
+		  ipar_n = 0;
+	  } else {
+		  ipar_n = 1;
+	  }
+	} else if (wd->parity_i == '-') {
+		if (ipar_p == 0) {
+			ipar_n = 1;
+		} else {
+			ipar_n = 0;
+		}
+	} else {printf("Parity error\n"); exit(0);}
+
+        sd_list* node_pi = p1_list_i[ipar_p + 2*(imjp + num_mj_p_i*b)]; // Get proton states resulting from p_b |p_i>
+        while (node_pi != NULL) {
+          int ppi = node_pi->pi; 
+          int ppn = node_pi->pn; // Get pn = p_a |p_i>
+          int phase1 = node_pi->phase;
+          int phase2 = 1;
+          int ppf = p1_array_f[(ppn - 1) + n_sds_p_int1*a]; // Get pf such that pn = p_a |p_f>
+          if (ppf == 0) {node_pi = node_pi->next; printf("Bad p node: %d\n", ppn); continue;}
+          if (ppf < 0) {
+            ppf *= -1;
+            phase2 = -1;
+          }
+          sd_list* node_ni = n1_list_i[ipar_n + 2*(imjn + num_mj_n_i*d)]; // Get neutron states resulting from n_d |n_i>
+          while (node_ni != NULL) {
+            int pni = node_ni->pi;
+            int pnn = node_ni->pn; // Get nn = n_d |n_i>
+            int phase3 = node_ni->phase;
+            int phase4 = 1;
+            int pnf = n1_array_f[(pnn - 1) + n_sds_n_int1*c];
+            if (pnf == 0) {node_ni = node_ni->next; continue;}
+            if (pnf < 0) {
+              pnf *= -1;
+              phase4 = -1;
+            }
+            unsigned int p_hash_i = ppi + wd->n_sds_p_i*(pni % HASH_SIZE);
+            unsigned int p_hash_f = ppf + wd->n_sds_p_f*(pnf % HASH_SIZE);
+            wh_list *node3 = wd->wh_hash_i[p_hash_i]; // hash corresponds to a_op operators
+   
+            int index_i = -1;
+            int index_f = -1;
+            while (node3 != NULL) {
+              if ((pni == node3->pn) && (ppi == node3->pp)) {
+                index_i = node3->index;
+                break;
+              }
+              node3 = node3->next;
+            }
+            if (index_i < 0) {node_ni = node_ni->next; printf("Not found\n"); continue;}
+            node3 = wd->wh_hash_f[p_hash_f];
+            while (node3 != NULL) {
+              if ((pnf == node3->pn) && (ppf == node3->pp)) {
+                index_f = node3->index;
+                break;
+              }
+              node3 = node3->next;
+            }
+            if (index_f < 0) {node_ni = node_ni->next; printf("Not found\n"); continue;}
+            eigen_list* eig_pair = transition;
+            int i_trans = 0;
+            while (eig_pair != NULL) {
+              int psi_i = eig_pair->eig_i;
+              int psi_f = eig_pair->eig_f;
+              density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2*phase3*phase4;
+              i_trans++;
+              eig_pair = eig_pair->next;
+            }
+            node_ni = node_ni->next;
+          }
+          node_pi = node_pi->next;
+        }
+      }
+    } 
+  } 
+  return;
+}
+
+void build_two_body_jumps_dmt0_alt(int n_s, int n_p, float mj_min, float mj_max, int num_mj, int n_sds_i, int n_sds_int1, int n_sds_int2, int*a1_array_f, int* a2_array_f, wf_list** a0_list_i, sd_list** a1_list_i, sd_list** a2_list_i, sd_list** a2_list_if, int* jz_shell, int* l_shell) {
 /*
   Input(s):
     mj_min_i: 
 */
   for (int j = 1; j <= n_sds_i; j++) {
-    if (w_from_p(j, n_s, n_p, w_shell) > w_max) {continue;}
-    int j_min = j_min_from_p(n_s, n_p, j);
     float mj = m_from_p(j, n_s, n_p, jz_shell);
     if ((mj < mj_min) || (mj > mj_max)) {continue;}
     int i_parity = (parity_from_p(j, n_s, n_p, l_shell) + 1)/2;
@@ -1279,6 +1503,65 @@ void build_two_body_jumps_i_and_f(int n_s, int n_p, float mj_min, float mj_max, 
     } else {
       wf_append(a0_list_i[i_parity + 2*i_mj], j);
     }
+    int j_min = j_min_from_p(n_s, n_p, j);
+    for (int b = j_min - 1; b < n_s; b++) {
+      int phase1;
+      int pn1 = a_op(n_s, n_p, j, b + 1, &phase1, j_min);
+      if (pn1 == 0) {continue;}
+      
+      for (int a = j_min - 1; a < b; a++) {
+        int phase2;
+        int pn2 = a_op(n_s, n_p - 1, pn1, a + 1, &phase2, j_min);
+        if (pn2 == 0) {continue;}
+        if (a2_list_i[i_parity + 2*(i_mj + num_mj*(b + a*n_s))] == NULL) {
+          a2_list_i[i_parity + 2*(i_mj + num_mj*(b + a*n_s))] = create_sd_node(j, pn2, phase1*phase2, NULL);
+        } else {
+          sd_append(a2_list_i[i_parity + 2*(i_mj + num_mj*(b + a*n_s))], j, pn2, phase1*phase2);
+        }
+        if (a2_list_i[i_parity + 2*(i_mj + num_mj*(a + b*n_s))] == NULL) {
+          a2_list_i[i_parity + 2*(i_mj + num_mj*(a + b*n_s))] = create_sd_node(j, pn2, -phase1*phase2, NULL);
+        } else {
+          sd_append(a2_list_i[i_parity + 2*(i_mj + num_mj*(a + b*n_s))], j, pn2, -phase1*phase2);
+        }
+        a2_array_f[(pn2 - 1) + n_sds_int2*(b + a*n_s)] = phase1*phase2*j;
+        a2_array_f[(pn2 - 1) + n_sds_int2*(a + b*n_s)] = -phase1*phase2*j;
+      }
+      for (int a = 0; a < n_s; a++) {
+        int phase2;
+        int pn2 = a_op_dag(n_s, n_p - 1, pn1, a + 1, &phase2, j_min);
+        if (pn2 == 0) {continue;}
+        float mj = m_from_p(pn2, n_s, n_p, jz_shell);
+        if ((mj < mj_min) || (mj > mj_max)) {continue;}
+
+        if (a2_list_if[i_parity + 2*(i_mj + num_mj*(b + a*n_s))] == NULL) {
+          a2_list_if[i_parity + 2*(i_mj + num_mj*(b + a*n_s))] = create_sd_node(j, pn2, phase1*phase2, NULL);
+        } else {
+          sd_append(a2_list_if[i_parity + 2*(i_mj + num_mj*(b + a*n_s))], j, pn2, phase1*phase2);
+        }
+      }
+    }
+  } 
+
+  return;
+}
+
+
+void build_two_body_jumps_dmt0(int n_s, int n_p, float mj_min, float mj_max, int num_mj, int n_sds_i, int n_sds_int1, int n_sds_int2, int*a1_array_f, int* a2_array_f, wf_list** a0_list_i, sd_list** a1_list_i, sd_list** a2_list_i, int* jz_shell, int* l_shell) {
+/*
+  Input(s):
+    mj_min_i: 
+*/
+  for (int j = 1; j <= n_sds_i; j++) {
+    float mj = m_from_p(j, n_s, n_p, jz_shell);
+    if ((mj < mj_min) || (mj > mj_max)) {continue;}
+    int i_parity = (parity_from_p(j, n_s, n_p, l_shell) + 1)/2;
+    int i_mj = mj - mj_min;
+    if (a0_list_i[i_parity + 2*i_mj] == NULL) {
+      a0_list_i[i_parity + 2*i_mj] = create_wf_node(j, NULL);
+    } else {
+      wf_append(a0_list_i[i_parity + 2*i_mj], j);
+    }
+    int j_min = j_min_from_p(n_s, n_p, j);
     for (int b = j_min - 1; b < n_s; b++) {
       int phase1;
       int pn1 = a_op(n_s, n_p, j, b + 1, &phase1, j_min);
@@ -1313,15 +1596,141 @@ void build_two_body_jumps_i_and_f(int n_s, int n_p, float mj_min, float mj_max, 
 }
 
 
-void build_two_body_jumps_dmtp2(int n_s, int n_proton, int num_mj_p_i, float mj_min_p_i, float mj_max_p_i, int num_mj_p_f, float mj_min_p_f, float mj_max_p_f, int n_sds_p_f, sd_list** p2_list_f, int n_neutron, int num_mj_n_i, float mj_min_n_i, float mj_max_n_i, int num_mj_n_f, float mj_min_n_f, float mj_max_n_f, int n_sds_n_i, sd_list** n2_list_i, int* jz_shell, int* l_shell) {
+void build_two_body_jumps_dmt0_trunc(int n_s, int n_p, float mj_min, float mj_max, int num_mj, int n_sds_i, int n_sds_int1, int n_sds_int2, int*a1_array_f, int* a2_array_f, wf_list** a0_list_i, sd_list** a1_list_i, sd_list** a2_list_i, int* jz_shell, int* l_shell, int* w_shell, int w_max) {
+/*
+  Input(s):
+    mj_min_i: 
+*/
+  for (int j = 1; j <= n_sds_i; j++) {
+    if (w_from_p(j, n_s, n_p, w_shell) > w_max) {continue;}
+    float mj = m_from_p(j, n_s, n_p, jz_shell);
+    if ((mj < mj_min) || (mj > mj_max)) {continue;}
+    int i_parity = (parity_from_p(j, n_s, n_p, l_shell) + 1)/2;
+    int i_mj = mj - mj_min;
+    if (a0_list_i[i_parity + 2*i_mj] == NULL) {
+      a0_list_i[i_parity + 2*i_mj] = create_wf_node(j, NULL);
+    } else {
+      wf_append(a0_list_i[i_parity + 2*i_mj], j);
+    }
+    int j_min = j_min_from_p(n_s, n_p, j);
+    for (int b = j_min - 1; b < n_s; b++) {
+      int phase1;
+      int pn1 = a_op(n_s, n_p, j, b + 1, &phase1, j_min);
+      if (pn1 == 0) {continue;}
+      a1_array_f[(pn1 - 1) + b*n_sds_int1] = j*phase1;
+      if (a1_list_i[i_parity + 2*(i_mj + num_mj*b)] == NULL) {
+        a1_list_i[i_parity + 2*(i_mj + num_mj*b)] = create_sd_node(j, pn1, phase1, NULL);
+      } else {
+        sd_append(a1_list_i[i_parity + 2*(i_mj + num_mj*b)], j, pn1, phase1);
+      }
+      for (int a = j_min - 1; a < b; a++) {
+        int phase2;
+        int pn2 = a_op(n_s, n_p - 1, pn1, a + 1, &phase2, j_min);
+        if (pn2 == 0) {continue;}
+        if (a2_list_i[i_parity + 2*(i_mj + num_mj*(b + a*n_s))] == NULL) {
+          a2_list_i[i_parity + 2*(i_mj + num_mj*(b + a*n_s))] = create_sd_node(j, pn2, phase1*phase2, NULL);
+        } else {
+          sd_append(a2_list_i[i_parity + 2*(i_mj + num_mj*(b + a*n_s))], j, pn2, phase1*phase2);
+        }
+        if (a2_list_i[i_parity + 2*(i_mj + num_mj*(a + b*n_s))] == NULL) {
+          a2_list_i[i_parity + 2*(i_mj + num_mj*(a + b*n_s))] = create_sd_node(j, pn2, -phase1*phase2, NULL);
+        } else {
+          sd_append(a2_list_i[i_parity + 2*(i_mj + num_mj*(a + b*n_s))], j, pn2, -phase1*phase2);
+        }
+        a2_array_f[(pn2 - 1) + n_sds_int2*(b + a*n_s)] = phase1*phase2*j;
+        a2_array_f[(pn2 - 1) + n_sds_int2*(a + b*n_s)] = -phase1*phase2*j;
+      }
+    }
+  } 
+
+  return;
+}
+
+
+void build_two_body_jumps_dmtp2_trunc(int n_s, int n_proton, int num_mj_p_i, float mj_min_p_i, float mj_max_p_i, int num_mj_p_f, float mj_min_p_f, float mj_max_p_f, int n_sds_p_f, sd_list** p2_list_f, int n_neutron, int num_mj_n_i, float mj_min_n_i, float mj_max_n_i, int num_mj_n_f, float mj_min_n_f, float mj_max_n_f, int n_sds_n_i, sd_list** n2_list_i, int* jz_shell, int* l_shell, int* w_shell, int w_max_p_i, int w_max_p_f, int w_max_n_i, int w_max_n_f) {
 
   for (int j = 1; j <= n_sds_n_i; j++) {
-    int j_min = j_min_from_p(n_s, n_neutron, j);
+    if (w_from_p(j, n_s, n_neutron, w_shell) > w_max_n_i) {continue;}
     float mj = m_from_p(j, n_s, n_neutron, jz_shell);
     if ((mj < mj_min_n_i) || (mj > mj_max_n_i)) {continue;}
     int i_mj = mj - mj_min_n_i;
     int i_parity = (parity_from_p(j, n_s, n_neutron, l_shell) + 1)/2;
+    int j_min = j_min_from_p(n_s, n_neutron, j);
+    
+    for (int b = j_min - 1; b < n_s; b++) {
+      int phase1;
+      int pn1 = a_op(n_s, n_neutron, j, b + 1, &phase1, j_min);
+      if (pn1 == 0) {continue;}
+      for (int a = j_min - 1; a < b; a++) {
+        int phase2;
+        int pn2 = a_op(n_s, n_neutron - 1, pn1, a + 1, &phase2, j_min);
+        if (pn2 == 0) {continue;}
+        mj = m_from_p(pn2, n_s, n_neutron - 2, jz_shell);
+        if ((mj < mj_min_n_f) || (mj > mj_max_n_f)) {continue;}
+        if (w_from_p(pn2, n_s, n_neutron - 2, w_shell) > w_max_n_f) {continue;}
 
+        if (n2_list_i[i_parity + 2*(i_mj + num_mj_n_i*(b + a*n_s))] == NULL) {
+          n2_list_i[i_parity + 2*(i_mj + num_mj_n_i*(b + a*n_s))] = create_sd_node(j, pn2, phase1*phase2, NULL);
+        } else {
+          sd_append(n2_list_i[i_parity + 2*(i_mj + num_mj_n_i*(b + a*n_s))], j, pn2, phase1*phase2);
+        }
+        if (n2_list_i[i_parity + 2*(i_mj + num_mj_n_i*(a + b*n_s))] == NULL) {
+          n2_list_i[i_parity + 2*(i_mj + num_mj_n_i*(a + b*n_s))] = create_sd_node(j, pn2, -phase1*phase2, NULL);
+        } else {
+          sd_append(n2_list_i[i_parity + 2*(i_mj + num_mj_n_i*(a + b*n_s))], j, pn2, -phase1*phase2);
+        }
+      }
+    }
+  }
+
+  for (int j = 1; j <= n_sds_p_f; j++) {
+    if (w_from_p(j, n_s, n_proton, w_shell) > w_max_p_f) {continue;}
+    float mj = m_from_p(j, n_s, n_proton, jz_shell);
+    if ((mj < mj_min_p_f) || (mj > mj_max_p_f)) {continue;}
+    int j_min = j_min_from_p(n_s, n_proton, j);
+    
+    for (int b = j_min - 1; b < n_s; b++) {
+      int phase1;
+      int pn1 = a_op(n_s, n_proton, j, b + 1, &phase1, j_min);
+      if (pn1 == 0) {continue;}
+      for (int a = j_min - 1; a < b; a++) {
+        int phase2;
+        int pn2 = a_op(n_s, n_proton - 1, pn1, a + 1, &phase2, j_min);
+        if (pn2 == 0) {continue;}
+        mj = m_from_p(pn2, n_s, n_proton - 2, jz_shell);
+        if ((mj < mj_min_p_i) || (mj > mj_max_p_i)) {continue;}
+        if (w_from_p(pn2, n_s, n_proton - 2, w_shell) > w_max_p_i) {continue;}
+        int i_mj = mj - mj_min_p_i;
+        int i_parity = (parity_from_p(j, n_s, n_proton - 2, l_shell) + 1)/2;
+
+        if (p2_list_f[i_parity + 2*(i_mj + num_mj_p_i*(b + a*n_s))] == NULL) {
+          p2_list_f[i_parity + 2*(i_mj + num_mj_p_i*(b + a*n_s))] = create_sd_node(j, pn2, phase1*phase2, NULL);
+        } else {
+          sd_append(p2_list_f[i_parity + 2*(i_mj + num_mj_p_i*(b + a*n_s))], j, pn2, phase1*phase2);
+        }
+        if (p2_list_f[i_parity + 2*(i_mj + num_mj_p_i*(a + b*n_s))] == NULL) {
+          p2_list_f[i_parity + 2*(i_mj + num_mj_p_i*(a + b*n_s))] = create_sd_node(j, pn2, -phase1*phase2, NULL);
+        } else {
+          sd_append(p2_list_f[i_parity + 2*(i_mj + num_mj_p_i*(a + b*n_s))], j, pn2, -phase1*phase2);
+        }
+      }
+    }
+  }
+
+
+  return;
+}
+
+
+void build_two_body_jumps_dmtp2(int n_s, int n_proton, int num_mj_p_i, float mj_min_p_i, float mj_max_p_i, int num_mj_p_f, float mj_min_p_f, float mj_max_p_f, int n_sds_p_f, sd_list** p2_list_f, int n_neutron, int num_mj_n_i, float mj_min_n_i, float mj_max_n_i, int num_mj_n_f, float mj_min_n_f, float mj_max_n_f, int n_sds_n_i, sd_list** n2_list_i, int* jz_shell, int* l_shell) {
+
+  for (int j = 1; j <= n_sds_n_i; j++) {
+    float mj = m_from_p(j, n_s, n_neutron, jz_shell);
+    if ((mj < mj_min_n_i) || (mj > mj_max_n_i)) {continue;}
+    int i_mj = mj - mj_min_n_i;
+    int i_parity = (parity_from_p(j, n_s, n_neutron, l_shell) + 1)/2;
+    int j_min = j_min_from_p(n_s, n_neutron, j);
+    
     for (int b = j_min - 1; b < n_s; b++) {
       int phase1;
       int pn1 = a_op(n_s, n_neutron, j, b + 1, &phase1, j_min);
@@ -1348,10 +1757,10 @@ void build_two_body_jumps_dmtp2(int n_s, int n_proton, int num_mj_p_i, float mj_
   }
 
   for (int j = 1; j <= n_sds_p_f; j++) {
-    int j_min = j_min_from_p(n_s, n_proton, j);
     float mj = m_from_p(j, n_s, n_proton, jz_shell);
     if ((mj < mj_min_p_f) || (mj > mj_max_p_f)) {continue;}
 
+    int j_min = j_min_from_p(n_s, n_proton, j);
     for (int b = j_min - 1; b < n_s; b++) {
       int phase1;
       int pn1 = a_op(n_s, n_proton, j, b + 1, &phase1, j_min);
@@ -1383,6 +1792,128 @@ void build_two_body_jumps_dmtp2(int n_s, int n_proton, int num_mj_p_i, float mj_
   return;
 }
 
+void build_two_body_jumps_dmtp1_trunc(int n_s, int n_proton_i, int num_mj_p_i, float mj_min_p_i, float mj_max_p_i, int n_proton_f, int num_mj_p_f, float mj_min_p_f, float mj_max_p_f, sd_list** p1_list_i, sd_list** p1_list_f, int* p2_array_f, int n_neutron_i, int num_mj_n_i, float mj_min_n_i, float mj_max_n_i, int n_neutron_f, int num_mj_n_f, float mj_min_n_f, float mj_max_n_f, sd_list** n1_list_i, sd_list** n2_list_i, int* n1_array_f, int* jz_shell, int* l_shell, int* w_shell, int w_max_p_i, int w_max_p_f, int w_max_n_i, int w_max_n_f) {
+
+  unsigned int n_sds_n_i = get_num_sds(n_s, n_neutron_i);
+  unsigned int n_sds_n_f = get_num_sds(n_s, n_neutron_f);
+  unsigned int n_sds_p_i = get_num_sds(n_s, n_proton_i);
+  unsigned int n_sds_p_f = get_num_sds(n_s, n_proton_f);
+
+  unsigned int n_sds_n_int1f = get_num_sds(n_s, n_neutron_f - 1);
+  unsigned int n_sds_p_int2f = get_num_sds(n_s, n_proton_f - 2);
+
+
+  for (int j = 1; j <= n_sds_n_i; j++) {
+    if (w_from_p(j, n_s, n_neutron_i, w_shell) > w_max_n_i) {continue;}
+    float mj = m_from_p(j, n_s, n_neutron_i, jz_shell);
+    if ((mj < mj_min_n_i) || (mj > mj_max_n_i)) {continue;}
+    int i_mj = mj - mj_min_n_i;
+    int i_parity = (parity_from_p(j, n_s, n_neutron_i, l_shell) + 1)/2;
+    int j_min = j_min_from_p(n_s, n_neutron_i, j);
+
+    for (int b = j_min - 1; b < n_s; b++) {
+      int phase1;
+      int pn1 = a_op(n_s, n_neutron_i, j, b + 1, &phase1, j_min);
+      if (pn1 == 0) {continue;}
+      if (w_from_p(pn1, n_s, n_neutron_f, w_shell) <= w_max_n_f) {
+        if (n1_list_i[i_parity + 2*(i_mj + num_mj_n_i*b)] == NULL) {
+          n1_list_i[i_parity + 2*(i_mj + num_mj_n_i*b)] = create_sd_node(j, pn1, phase1, NULL);
+        } else {
+          sd_append(n1_list_i[i_parity + 2*(i_mj + num_mj_n_i*b)], j, pn1, phase1);
+        }
+      }
+      for (int a = j_min - 1; a < b; a++) {
+        int phase2;
+        int pn2 = a_op(n_s, n_neutron_i - 1, pn1, a + 1, &phase2, j_min);
+        if (pn2 == 0) {continue;}
+ 
+        if (n2_list_i[i_parity + 2*(i_mj + num_mj_n_i*(b + a*n_s))] == NULL) {
+          n2_list_i[i_parity + 2*(i_mj + num_mj_n_i*(b + a*n_s))] = create_sd_node(j, pn2, phase1*phase2, NULL);
+        } else {
+          sd_append(n2_list_i[i_parity + 2*(i_mj + num_mj_n_i*(b + a*n_s))], j, pn2, phase1*phase2);
+        }
+        if (n2_list_i[i_parity + 2*(i_mj + num_mj_n_i*(a + b*n_s))] == NULL) {
+          n2_list_i[i_parity + 2*(i_mj + num_mj_n_i*(a + b*n_s))] = create_sd_node(j, pn2, -phase1*phase2, NULL);
+        } else {
+          sd_append(n2_list_i[i_parity + 2*(i_mj + num_mj_n_i*(a + b*n_s))], j, pn2, -phase1*phase2);
+        }
+      }
+    }
+  }
+
+  for (int j = 1; j <= n_sds_n_f; j++) {
+    float mj = m_from_p(j, n_s, n_neutron_f, jz_shell);
+    if ((mj < mj_min_n_f) || (mj > mj_max_n_f)) {continue;}
+    int j_min = j_min_from_p(n_s, n_neutron_f, j);
+
+    for (int b = j_min - 1; b < n_s; b++) {
+      int phase1;
+      int pn1 = a_op(n_s, n_neutron_f, j, b + 1, &phase1, j_min);
+      if (pn1 == 0) {continue;}
+      n1_array_f[(pn1 - 1) + b*n_sds_n_int1f] = j*phase1;
+    }
+  }
+
+  for (int j = 1; j <= n_sds_p_i; j++) {
+    if (w_from_p(j, n_s, n_proton_i, w_shell) > w_max_n_i) {continue;}
+    float mj = m_from_p(j, n_s, n_proton_i, jz_shell);
+    if ((mj < mj_min_p_i) || (mj > mj_max_p_i)) {continue;}
+    int i_mj = mj - mj_min_p_i;
+    int i_parity = (parity_from_p(j, n_s, n_proton_i, l_shell) + 1)/2;
+    int j_min = j_min_from_p(n_s, n_proton_i, j);
+    
+    for (int b = j_min - 1; b < n_s; b++) {
+      int phase1;
+      int pn1 = a_op(n_s, n_proton_i, j, b + 1, &phase1, j_min);
+      if (pn1 == 0) {continue;}
+      if (p1_list_i[i_parity + 2*(i_mj + num_mj_p_i*b)] == NULL) {
+        p1_list_i[i_parity + 2*(i_mj + num_mj_p_i*b)] = create_sd_node(j, pn1, phase1, NULL);
+      } else {
+        sd_append(p1_list_i[i_parity + 2*(i_mj + num_mj_p_i*b)], j, pn1, phase1);
+      }
+    }
+  }
+
+
+  for (int j = 1; j <= n_sds_p_f; j++) {
+    if (w_from_p(j, n_s, n_proton_f, w_shell) > w_max_p_f) {continue;}
+    float mj = m_from_p(j, n_s, n_proton_f, jz_shell);
+    if ((mj < mj_min_p_f) || (mj > mj_max_p_f)) {continue;}
+    int j_min = j_min_from_p(n_s, n_proton_f, j);
+    
+    for (int b = j_min - 1; b < n_s; b++) {
+      int phase1;
+      int pn1 = a_op(n_s, n_proton_f, j, b + 1, &phase1, j_min);
+      if (pn1 == 0) {continue;}
+      
+      if (w_from_p(pn1, n_s, n_proton_i, w_shell) <= w_max_p_f) {
+        mj = m_from_p(pn1, n_s, n_proton_i, jz_shell);
+        if ((mj >= mj_min_p_i) && (mj <= mj_max_p_i)) {
+          int i_mj = mj - mj_min_p_i;
+          int i_parity = (parity_from_p(pn1, n_s, n_proton_i, l_shell) + 1)/2;
+
+          if (p1_list_f[i_parity + 2*(i_mj + num_mj_p_i*b)] == NULL) {
+            p1_list_f[i_parity + 2*(i_mj + num_mj_p_i*b)] = create_sd_node(pn1, j, phase1, NULL);
+          } else {
+            sd_append(p1_list_f[i_parity + 2*(i_mj + num_mj_p_i*b)], pn1, j, phase1);
+          }
+	}
+      }
+      for (int a = j_min - 1; a < b; a++) {
+        int phase2;
+        int pn2 = a_op(n_s, n_proton_f - 1, pn1, a + 1, &phase2, j_min);
+        if (pn2 == 0) {continue;}
+        p2_array_f[(pn2 - 1) + n_sds_p_int2f*(b + a*n_s)] = phase1*phase2*j;
+        p2_array_f[(pn2 - 1) + n_sds_p_int2f*(a + b*n_s)] = -phase1*phase2*j;
+      }
+    }
+  }
+  printf("Done\n");
+
+  return;
+}
+
+
 void build_two_body_jumps_dmtp1(int n_s, int n_proton_i, int num_mj_p_i, float mj_min_p_i, float mj_max_p_i, int n_proton_f, int num_mj_p_f, float mj_min_p_f, float mj_max_p_f, sd_list** p1_list_i, sd_list** p1_list_f, int* p2_array_f, int n_neutron_i, int num_mj_n_i, float mj_min_n_i, float mj_max_n_i, int n_neutron_f, int num_mj_n_f, float mj_min_n_f, float mj_max_n_f, sd_list** n1_list_i, sd_list** n2_list_i, int* n1_array_f, int* jz_shell, int* l_shell) {
 
   unsigned int n_sds_n_i = get_num_sds(n_s, n_neutron_i);
@@ -1395,12 +1926,12 @@ void build_two_body_jumps_dmtp1(int n_s, int n_proton_i, int num_mj_p_i, float m
 
 
   for (int j = 1; j <= n_sds_n_i; j++) {
-    int j_min = j_min_from_p(n_s, n_neutron_i, j);
     float mj = m_from_p(j, n_s, n_neutron_i, jz_shell);
     if ((mj < mj_min_n_i) || (mj > mj_max_n_i)) {continue;}
     int i_mj = mj - mj_min_n_i;
     int i_parity = (parity_from_p(j, n_s, n_neutron_i, l_shell) + 1)/2;
-
+    int j_min = j_min_from_p(n_s, n_neutron_i, j);
+    
     for (int b = j_min - 1; b < n_s; b++) {
       int phase1;
       int pn1 = a_op(n_s, n_neutron_i, j, b + 1, &phase1, j_min);
@@ -1442,11 +1973,11 @@ void build_two_body_jumps_dmtp1(int n_s, int n_proton_i, int num_mj_p_i, float m
     }
   }
   for (int j = 1; j <= n_sds_p_i; j++) {
-    int j_min = j_min_from_p(n_s, n_proton_i, j);
     float mj = m_from_p(j, n_s, n_proton_i, jz_shell);
     if ((mj < mj_min_p_i) || (mj > mj_max_p_i)) {continue;}
     int i_mj = mj - mj_min_p_i;
     int i_parity = (parity_from_p(j, n_s, n_proton_i, l_shell) + 1)/2;
+    int j_min = j_min_from_p(n_s, n_proton_i, j);
 
     for (int b = j_min - 1; b < n_s; b++) {
       int phase1;
@@ -1462,23 +1993,25 @@ void build_two_body_jumps_dmtp1(int n_s, int n_proton_i, int num_mj_p_i, float m
 
 
   for (int j = 1; j <= n_sds_p_f; j++) {
-    int j_min = j_min_from_p(n_s, n_proton_f, j);
     float mj = m_from_p(j, n_s, n_proton_f, jz_shell);
     if ((mj < mj_min_p_f) || (mj > mj_max_p_f)) {continue;}
+    int j_min = j_min_from_p(n_s, n_proton_f, j);
 
     for (int b = j_min - 1; b < n_s; b++) {
       int phase1;
       int pn1 = a_op(n_s, n_proton_f, j, b + 1, &phase1, j_min);
       if (pn1 == 0) {continue;}
+      
       mj = m_from_p(pn1, n_s, n_proton_i, jz_shell);
-      if ((mj < mj_min_p_i) || (mj > mj_max_p_i)) {continue;}
-      int i_mj = mj - mj_min_p_i;
-      int i_parity = (parity_from_p(pn1, n_s, n_proton_i, l_shell) + 1)/2;
+      if ((mj >= mj_min_p_i) && (mj <= mj_max_p_i)) {
+        int i_mj = mj - mj_min_p_i;
+        int i_parity = (parity_from_p(pn1, n_s, n_proton_i, l_shell) + 1)/2;
 
-      if (p1_list_f[i_parity + 2*(i_mj + num_mj_p_i*b)] == NULL) {
-        p1_list_f[i_parity + 2*(i_mj + num_mj_p_i*b)] = create_sd_node(pn1, j, phase1, NULL);
-      } else {
-        sd_append(p1_list_f[i_parity + 2*(i_mj + num_mj_p_i*b)], pn1, j, phase1);
+        if (p1_list_f[i_parity + 2*(i_mj + num_mj_p_i*b)] == NULL) {
+          p1_list_f[i_parity + 2*(i_mj + num_mj_p_i*b)] = create_sd_node(pn1, j, phase1, NULL);
+        } else {
+          sd_append(p1_list_f[i_parity + 2*(i_mj + num_mj_p_i*b)], pn1, j, phase1);
+        }
       }
       for (int a = j_min - 1; a < b; a++) {
         int phase2;
@@ -1494,106 +2027,12 @@ void build_two_body_jumps_dmtp1(int n_s, int n_proton_i, int num_mj_p_i, float m
   return;
 }
 
-
-void build_two_body_jumps_i(int n_s, int n_p, float mj_min, float mj_max, int num_mj, int n_sds_i, wf_list** a0_list_i, sd_list** a1_list_i, sd_list** a2_list_i, int* jz_shell, int* l_shell) {
-
-  for (int j = 1; j <= n_sds_i; j++) {
-    int j_min = j_min_from_p(n_s, n_p, j);
-    float mj = m_from_p(j, n_s, n_p, jz_shell);
-    if ((mj < mj_min) || (mj > mj_max)) {continue;}
-    int i_mj = mj - mj_min;
-    int i_parity = (parity_from_p(j, n_s, n_p, l_shell) + 1)/2;
-    if (a0_list_i[i_parity + 2*i_mj] == NULL) {
-      a0_list_i[i_parity + 2*i_mj] = create_wf_node(j, NULL);
-    } else {
-      wf_append(a0_list_i[i_parity + 2*i_mj], j);
-    }
-
-    for (int b = j_min - 1; b < n_s; b++) {
-      int phase1;
-      int pn1 = a_op(n_s, n_p, j, b + 1, &phase1, j_min);
-      if (pn1 == 0) {continue;}
-      if (a1_list_i[i_parity + 2*(i_mj + num_mj*b)] == NULL) {
-        a1_list_i[i_parity + 2*(i_mj + num_mj*b)] = create_sd_node(j, pn1, phase1, NULL);
-      } else {
-        sd_append(a1_list_i[i_parity + 2*(i_mj + num_mj*b)], j, pn1, phase1);
-      }
-      for (int a = j_min - 1; a < b; a++) {
-        int phase2;
-        int pn2 = a_op(n_s, n_p - 1, pn1, a + 1, &phase2, j_min);
-        if (pn2 == 0) {continue;}
-        if (a2_list_i[i_parity + 2*(i_mj + num_mj*(b + a*n_s))] == NULL) {
-          a2_list_i[i_parity + 2*(i_mj + num_mj*(b + a*n_s))] = create_sd_node(j, pn2, phase1*phase2, NULL);
-        } else {
-          sd_append(a2_list_i[i_parity + 2*(i_mj + num_mj*(b + a*n_s))], j, pn2, phase1*phase2);
-        }
-        if (a2_list_i[i_parity + 2*(i_mj + num_mj*(a + b*n_s))] == NULL) {
-          a2_list_i[i_parity + 2*(i_mj + num_mj*(a + b*n_s))] = create_sd_node(j, pn2, -phase1*phase2, NULL);
-        } else {
-          sd_append(a2_list_i[i_parity + 2*(i_mj + num_mj*(a + b*n_s))], j, pn2, -phase1*phase2);
-        }
-      }
-    }
-  }
-
-  return;
-}
-
-void build_two_body_jumps_f(int n_s, int n_p, float mj_min, float mj_max, int num_mj, int n_sds_f, int n_sds_int1, int n_sds_int2, int* a1_array_f, sd_list** a1_list_f, int* a2_array_f, sd_list** a2_list_f, int* jz_shell, int* l_shell) {
-  
-  for (int j = 1; j <= n_sds_f; j++) {
-    int j_min = j_min_from_p(n_s, n_p, j);
-    for (int b = j_min - 1; b < n_s; b++) {
-      int phase1;
-      int pn1 = a_op(n_s, n_p, j, b + 1, &phase1, j_min);
-      if (pn1 == 0) {continue;}
-      a1_array_f[(pn1 - 1) + b*n_sds_int1] = j*phase1;
-      float mj = m_from_p(pn1, n_s, n_p - 1, jz_shell);
-      if ((mj > mj_max) || (mj < mj_min)) {continue;}
-      int i_mj = mj - mj_min;
-      int i_parity = (parity_from_p(pn1, n_s, n_p - 1, l_shell) + 1)/2;
-      if (a1_list_f[i_parity + 2*(i_mj + num_mj*b)] == NULL) {
-        a1_list_f[i_parity + 2*(i_mj + num_mj*b)] = create_sd_node(pn1, j, phase1, NULL);
-      } else {
-        sd_append(a1_list_f[i_parity + 2*(i_mj + num_mj*b)], pn1, j, phase1);
-      }
-
-      for (int a = j_min - 1; a < b; a++) {
-        int phase2;
-        int pn2 = a_op(n_s, n_p - 1, pn1, a + 1, &phase2, j_min);
-        if (pn2 == 0) {continue;}
-        a2_array_f[(pn2 - 1) + n_sds_int2*(b + a*n_s)] = phase1*phase2*j;
-        a2_array_f[(pn2 - 1) + n_sds_int2*(a + b*n_s)] = -phase1*phase2*j;
-        mj = m_from_p(pn2, n_s, n_p - 2, jz_shell);
-        if ((mj > mj_max) || (mj < mj_min)) {continue;}
-        i_mj = mj - mj_min;
-        i_parity = (parity_from_p(pn2, n_s, n_p - 2, l_shell) + 1)/2;
-        if (a2_list_f[i_parity + 2*(i_mj + num_mj*(b + a*n_s))] == NULL) {
-          a2_list_f[i_parity + 2*(i_mj + num_mj*(b + a*n_s))] = create_sd_node(pn2, j, phase1*phase2, NULL);
-        } else {
-          sd_append(a2_list_f[i_parity + 2*(i_mj + num_mj*(b + a*n_s))], pn2, j, phase1*phase2);
-        }
-        if (a2_list_f[i_parity + 2*(i_mj + num_mj*(a + b*n_s))] == NULL) {
-          a2_list_f[i_parity + 2*(i_mj + num_mj*(a + b*n_s))] = create_sd_node(pn2, j, -phase1*phase2, NULL);
-        } else {
-          sd_append(a2_list_f[i_parity + 2*(i_mj + num_mj*(a + b*n_s))], pn2, j, -phase1*phase2);
-        }
-      }
-    }
-  }
-
-  return;
-}
-
-
-void build_one_body_jumps_i_and_f(int n_s, int n_p, float mj_min, float mj_max, int num_mj, int n_sds_i, int n_sds_int, int*a1_array_f, wf_list** a0_list_i, sd_list** a1_list_i, int* jz_shell, int* l_shell, int* w_shell, int w_max) {
+void build_one_body_jumps_dmt0(int n_s, int n_p, float mj_min, float mj_max, int num_mj, int n_sds_i, int n_sds_int, int*a1_array_f, wf_list** a0_list_i, sd_list** a1_list_i, int* jz_shell, int* l_shell) {
 /*
   Input(s):
     mj_min_i: 
 */
   for (int j = 1; j <= n_sds_i; j++) {
-    if (w_from_p(j, n_s, n_p, w_shell) > w_max) {continue;}
-    int j_min = j_min_from_p(n_s, n_p, j);
     float mj = m_from_p(j, n_s, n_p, jz_shell);
     if ((mj < mj_min) || (mj > mj_max)) {continue;}
     int i_parity = (parity_from_p(j, n_s, n_p, l_shell) + 1)/2;
@@ -1603,6 +2042,8 @@ void build_one_body_jumps_i_and_f(int n_s, int n_p, float mj_min, float mj_max, 
     } else {
       wf_append(a0_list_i[i_parity + 2*i_mj], j);
     }
+    int j_min = j_min_from_p(n_s, n_p, j);
+    
     for (int a = j_min - 1; a < n_s; a++) {
       int phase;
       int pn = a_op(n_s, n_p, j, a + 1, &phase, j_min);
@@ -1619,19 +2060,18 @@ void build_one_body_jumps_i_and_f(int n_s, int n_p, float mj_min, float mj_max, 
   return;
 }
 
-void build_one_body_jumps_dmtp1(int n_s, int n_proton_f, int num_mj_p_i, float mj_min_p_i, float mj_max_p_i, int num_mj_p_f, float mj_min_p_f, float mj_max_p_f, sd_list** p1_list_f, int n_neutron_i, int num_mj_n_i, float mj_min_n_i, float mj_max_n_i, sd_list** n1_list_i, int* jz_shell, int* l_shell, int* w_shell, int w_max) {
+void build_one_body_jumps_dmtp1(int n_s, int n_proton_f, int num_mj_p_i, float mj_min_p_i, float mj_max_p_i, int num_mj_p_f, float mj_min_p_f, float mj_max_p_f, sd_list** p1_list_f, int n_neutron_i, int num_mj_n_i, float mj_min_n_i, float mj_max_n_i, sd_list** n1_list_i, int* jz_shell, int* l_shell) {
 
   unsigned int n_sds_n_i = get_num_sds(n_s, n_neutron_i);
   unsigned int n_sds_p_f = get_num_sds(n_s, n_proton_f);
 
 
   for (int j = 1; j <= n_sds_n_i; j++) {
-    if (w_from_p(j, n_s, n_neutron_i, w_shell) > w_max) {continue;}
-    int j_min = j_min_from_p(n_s, n_neutron_i, j);
     float mj = m_from_p(j, n_s, n_neutron_i, jz_shell);
     if ((mj < mj_min_n_i) || (mj > mj_max_n_i)) {continue;}
     int i_mj = mj - mj_min_n_i;
     int i_parity = (parity_from_p(j, n_s, n_neutron_i, l_shell) + 1)/2;
+    int j_min = j_min_from_p(n_s, n_neutron_i, j);
 
     for (int a = j_min - 1; a < n_s; a++) {
       int phase;
@@ -1647,10 +2087,9 @@ void build_one_body_jumps_dmtp1(int n_s, int n_proton_f, int num_mj_p_i, float m
   }
 
   for (int j = 1; j <= n_sds_p_f; j++) {
-    if (w_from_p(j, n_s, n_proton_f, w_shell) > w_max) {continue;}
-    int j_min = j_min_from_p(n_s, n_proton_f, j);
     float mj = m_from_p(j, n_s, n_proton_f, jz_shell);
     if ((mj < mj_min_p_f) || (mj > mj_max_p_f)) {continue;}
+    int j_min = j_min_from_p(n_s, n_proton_f, j);
 
     for (int a = j_min - 1; a < n_s; a++) {
       int phase;
@@ -1674,170 +2113,203 @@ void build_one_body_jumps_dmtp1(int n_s, int n_proton_f, int num_mj_p_i, float m
 }
 
 
-void build_one_body_jumps_i(int n_s, int n_p, float mj_min, float mj_max, int num_mj, int n_sds_i, wf_list** a0_list_i, sd_list** a1_list_i,  int* jz_shell, int* l_shell, int* w_shell, int w_max) {
 
+void build_one_body_jumps_dmt0_trunc(int n_s, int n_p, float mj_min, float mj_max, int num_mj, int n_sds_i, int n_sds_int, int*a1_array_f, wf_list** a0_list_i, sd_list** a1_list_i, int* jz_shell, int* l_shell, int* w_shell, int w_max) {
+/*
+  Input(s):
+    mj_min_i: 
+*/
   for (int j = 1; j <= n_sds_i; j++) {
     if (w_from_p(j, n_s, n_p, w_shell) > w_max) {continue;}
-    int j_min = j_min_from_p(n_s, n_p, j);
     float mj = m_from_p(j, n_s, n_p, jz_shell);
     if ((mj < mj_min) || (mj > mj_max)) {continue;}
-    int i_mj = mj - mj_min;
     int i_parity = (parity_from_p(j, n_s, n_p, l_shell) + 1)/2;
+    int i_mj = mj - mj_min;
     if (a0_list_i[i_parity + 2*i_mj] == NULL) {
       a0_list_i[i_parity + 2*i_mj] = create_wf_node(j, NULL);
     } else {
       wf_append(a0_list_i[i_parity + 2*i_mj], j);
     }
-
+    int j_min = j_min_from_p(n_s, n_p, j);
+    
     for (int a = j_min - 1; a < n_s; a++) {
       int phase;
       int pn = a_op(n_s, n_p, j, a + 1, &phase, j_min);
       if (pn == 0) {continue;}
-
+      a1_array_f[(pn - 1) + a*n_sds_int] = j*phase;
       if (a1_list_i[i_parity + 2*(i_mj + num_mj*a)] == NULL) {
         a1_list_i[i_parity + 2*(i_mj + num_mj*a)] = create_sd_node(j, pn, phase, NULL);
       } else {
         sd_append(a1_list_i[i_parity + 2*(i_mj + num_mj*a)], j, pn, phase);
       }
     }
-  }
+  } 
 
   return;
 }
 
-void build_one_body_jumps_f(int n_s, int n_p, float mj_min, float mj_max, int num_mj, int n_sds_f, int n_sds_int, int* a1_array_f, sd_list** a1_list_f, int* jz_shell, int* l_shell, int* w_shell, int w_max) {
-  
-  for (int j = 1; j <= n_sds_f; j++) {
-     if (w_from_p(j, n_s, n_p, w_shell) > w_max) {continue;}
-     int j_min = j_min_from_p(n_s, n_p, j);
+void build_one_body_jumps_dmtp1_trunc(int n_s, int n_proton_f, int num_mj_p_i, float mj_min_p_i, float mj_max_p_i, int num_mj_p_f, float mj_min_p_f, float mj_max_p_f, sd_list** p1_list_f, int n_neutron_i, int num_mj_n_i, float mj_min_n_i, float mj_max_n_i, sd_list** n1_list_i, int* jz_shell, int* l_shell, int* w_shell, int w_max_p_i, int w_max_p_f, int w_max_n_i, int w_max_n_f) {
+
+  unsigned int n_sds_n_i = get_num_sds(n_s, n_neutron_i);
+  unsigned int n_sds_p_f = get_num_sds(n_s, n_proton_f);
+
+  for (int j = 1; j <= n_sds_n_i; j++) {
+    if (w_from_p(j, n_s, n_neutron_i, w_shell) > w_max_n_i) {continue;}
+    float mj = m_from_p(j, n_s, n_neutron_i, jz_shell);
+    if ((mj < mj_min_n_i) || (mj > mj_max_n_i)) {continue;}
+    int i_mj = mj - mj_min_n_i;
+    int i_parity = (parity_from_p(j, n_s, n_neutron_i, l_shell) + 1)/2;
+    int j_min = j_min_from_p(n_s, n_neutron_i, j);
 
     for (int a = j_min - 1; a < n_s; a++) {
       int phase;
-      int pn = a_op(n_s, n_p, j, a + 1, &phase, j_min);
+      int pn = a_op(n_s, n_neutron_i, j, a + 1, &phase, j_min);
       if (pn == 0) {continue;}
-      float mj = m_from_p(pn, n_s, n_p - 1, jz_shell);
-      if ((mj > mj_max) || (mj < mj_min)) {continue;}
-      int i_mj = mj - mj_min;
-      int i_parity = (parity_from_p(pn, n_s, n_p - 1, l_shell) + 1)/2;
-
-      a1_array_f[(pn - 1) + a*n_sds_int] = j*phase;
-      if (a1_list_f[i_parity + 2*(i_mj + num_mj*a)] == NULL) {
-       a1_list_f[i_parity + 2*(i_mj + num_mj*a)] = create_sd_node(pn, j, phase, NULL);
+      if (w_from_p(pn, n_s, n_neutron_i - 1, w_shell) > w_max_n_f) {continue;}
+      if (n1_list_i[i_parity + 2*(i_mj + num_mj_n_i*a)] == NULL) {
+        n1_list_i[i_parity + 2*(i_mj + num_mj_n_i*a)] = create_sd_node(j, pn, phase, NULL);
       } else {
-        sd_append(a1_list_f[i_parity + 2*(i_mj + num_mj*a)], pn, j, phase);
+        sd_append(n1_list_i[i_parity + 2*(i_mj + num_mj_n_i*a)], j, pn, phase);
       }
-
     }
   }
+
+  for (int j = 1; j <= n_sds_p_f; j++) {
+    if (w_from_p(j, n_s, n_proton_f, w_shell) > w_max_p_f) {continue;}
+    float mj = m_from_p(j, n_s, n_proton_f, jz_shell);
+    if ((mj < mj_min_p_f) || (mj > mj_max_p_f)) {continue;}
+    int j_min = j_min_from_p(n_s, n_proton_f, j);
+
+    for (int a = j_min - 1; a < n_s; a++) {
+      int phase;
+      int pn = a_op(n_s, n_proton_f, j, a + 1, &phase, j_min);
+      if (pn == 0) {continue;}
+      if (w_from_p(pn, n_s, n_proton_f - 1, w_shell) > w_max_p_i) {continue;}
+      mj = m_from_p(pn, n_s, n_proton_f - 1, jz_shell);
+      if ((mj < mj_min_p_i) || (mj > mj_max_p_i)) {continue;}
+      int i_mj = mj - mj_min_p_i;
+      int i_parity = (parity_from_p(pn, n_s, n_proton_f - 1, l_shell) + 1)/2;
+
+      if (p1_list_f[i_parity + 2*(i_mj + num_mj_p_i*a)] == NULL) {
+        p1_list_f[i_parity + 2*(i_mj + num_mj_p_i*a)] = create_sd_node(pn, j, phase, NULL);
+      } else {
+        sd_append(p1_list_f[i_parity + 2*(i_mj + num_mj_p_i*a)], pn, j, phase);
+      }
+    }
+  }
+
 
   return;
 }
 
+void trace_one_body_nodes_dmt0(int a, int b, int num_mj_p_i, float mj_min_p_i, int num_mj_n_i, float mj_min_n_i, int n_sds_int, int* p1_array_f, sd_list** p1_list_i, wf_list** n0_list_i, wfnData* wd, int i_op, eigen_list* transition, double* density) {
 
-void trace_1body_t0_nodes(int a, int b, int num_mj, int n_sds_int, int* a1_array_f, sd_list** a1_list_i, wf_list** a0_list_i, wfnData* wd, int i_op, eigen_list* transition, double* density) {
-
-  int ns = wd->n_shells;
-
-  for (int ipar1 = 0; ipar1 <= 1; ipar1++) {
-    for (int imj = 0; imj < num_mj; imj++) {
-      sd_list* node1 = a1_list_i[ipar1 + 2*(imj + num_mj*b)];
-      while (node1 != NULL) {
-        unsigned int ppn = node1->pn;
-        unsigned int ppi = node1->pi;
-        int phase1 = node1->phase;
-        int ppf = a1_array_f[(ppn - 1) + n_sds_int*a];
-        if (ppf == 0) {node1 = node1->next; continue;}
-        int phase2 = 1;
-        node1 = node1->next;
-        if (ppf < 0) {
-        ppf *= -1;
- 	phase2 = -1;
-        }
-	int ipar2;
-        if (wd->parity_i == '+') {
-	  if (ipar1 == 0) {
-		  ipar2 = 0;
+  for (int imjp = 0; imjp < num_mj_p_i; imjp++) {
+    float mjp = imjp + mj_min_p_i;
+    for (int imjn = 0; imjn < num_mj_n_i; imjn++) {
+      float mjn = imjn + mj_min_n_i;
+      if ((mjp + mjn != 0) && (mjp + mjn != 0.5)) {continue;}
+      for (int ipar_p = 0; ipar_p <= 1; ipar_p++) {
+        int ipar_n;
+	if (wd->parity_i == '+') {
+	  if (ipar_p == 0) {
+		  ipar_n = 0;
 	  } else {
-		  ipar2 = 1;
+		  ipar_n = 1;
 	  }
 	} else if (wd->parity_i == '-') {
-		if (ipar1 == 0) {
-			ipar2 = 1;
+		if (ipar_p == 0) {
+			ipar_n = 1;
 		} else {
-			ipar2 = 0;
+			ipar_n = 0;
 		}
 	} else {printf("Parity error\n"); exit(0);}
 
-        wf_list* node2 = a0_list_i[ipar2 + 2*(num_mj - imj - 1)];
-        while (node2 != NULL) {
-	  int pn = node2->p;
-   	  int index_i = -1;
-	  int index_f = -1;
+        sd_list* node1 = p1_list_i[ipar_p + 2*(imjp + num_mj_p_i*b)];
+        while (node1 != NULL) {
+          unsigned int ppn = node1->pn;
+          unsigned int ppi = node1->pi;
+          int phase1 = node1->phase;
+          int ppf = p1_array_f[(ppn - 1) + n_sds_int*a];
+          if (ppf == 0) {node1 = node1->next; continue;}
+          int phase2 = 1;
+          node1 = node1->next;
+          if (ppf < 0) {
+            ppf *= -1;
+	    phase2 = -1;
+          }
 
-	  if (i_op == 0) {
-	    unsigned int p_hash_i = ppi + wd->n_sds_p_i*(pn % HASH_SIZE);
-	    wh_list* node3 = wd->wh_hash_i[p_hash_i];
-	    while (node3 != NULL) {
-	      if ((pn == node3->pn) && (ppi == node3->pp)) {
-	        index_i = node3->index;
-	        break;
-	      }
-	      node3 = node3->next;
-	    }
-	    if (index_i < 0) {node2 = node2->next; continue;}
+          wf_list* node2 = n0_list_i[ipar_n + 2*imjn];
+          while (node2 != NULL) {
+	    int pn = node2->p;
+   	    int index_i = -1;
+	    int index_f = -1;
 
-	    unsigned int p_hash_f = ppf + wd->n_sds_p_f*(pn % HASH_SIZE);
-	    node3 = wd->wh_hash_f[p_hash_f];
-	    while (node3 != NULL) {
-	      if ((pn == node3->pn) && (ppf == node3->pp)) {
-	        index_f = node3->index;
-	        break;
+  	    if (i_op == 0) {
+	      unsigned int p_hash_i = ppi + wd->n_sds_p_i*(pn % HASH_SIZE);
+	      wh_list* node3 = wd->wh_hash_i[p_hash_i];
+	      while (node3 != NULL) {
+	        if ((pn == node3->pn) && (ppi == node3->pp)) {
+	          index_i = node3->index;
+	          break;
+	        }
+	        node3 = node3->next;
 	      }
-	      node3 = node3->next;
-	    }
-	    if (index_f < 0) {node2 = node2->next; continue;}
-            eigen_list* eig_pair = transition;
-            int i_trans = 0;
-            while (eig_pair != NULL) {
-              int psi_i = eig_pair->eig_i;
-              int psi_f = eig_pair->eig_f;
-	      density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
-              i_trans++;
-              eig_pair = eig_pair->next;
-            }
-	  } else {
-	    unsigned int p_hash_i = pn + wd->n_sds_p_i*(ppi % HASH_SIZE);
-	    wh_list* node3 = wd->wh_hash_i[p_hash_i];
-	    while (node3 != NULL) {
-	      if ((pn == node3->pp) && (ppi == node3->pn)) {
-	        index_i = node3->index;
-	        break;
-	      }
-	      node3 = node3->next;
-	    }
-	    if (index_i < 0) {node2 = node2->next; continue;}
+	      if (index_i < 0) {node2 = node2->next; continue;}
 
-	    unsigned int p_hash_f = pn + wd->n_sds_p_f*(ppf % HASH_SIZE);
-	    node3 = wd->wh_hash_f[p_hash_f];
-	    while (node3 != NULL) {
-	      if ((pn == node3->pp) && (ppf == node3->pn)) {
-	        index_f = node3->index;
-	        break;
+	      unsigned int p_hash_f = ppf + wd->n_sds_p_f*(pn % HASH_SIZE);
+	      node3 = wd->wh_hash_f[p_hash_f];
+	      while (node3 != NULL) {
+	        if ((pn == node3->pn) && (ppf == node3->pp)) {
+	          index_f = node3->index;
+	          break;
+	        }
+	        node3 = node3->next;
 	      }
-	      node3 = node3->next;
-	    }
-	    if (index_f < 0) {node2 = node2->next; continue;}
-            eigen_list* eig_pair = transition;
-            int i_trans = 0;
-            while (eig_pair != NULL) {
-              int psi_i = eig_pair->eig_i;
-              int psi_f = eig_pair->eig_f;
-	      density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
-              i_trans++;
-              eig_pair = eig_pair->next;
-            }
-	  } 
-	  node2 = node2->next;
+	      if (index_f < 0) {node2 = node2->next; continue;}
+              eigen_list* eig_pair = transition;
+              int i_trans = 0;
+              while (eig_pair != NULL) {
+                int psi_i = eig_pair->eig_i;
+                int psi_f = eig_pair->eig_f;
+	        density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
+                i_trans++;
+                eig_pair = eig_pair->next;
+              }
+	    } else {
+	      unsigned int p_hash_i = pn + wd->n_sds_p_i*(ppi % HASH_SIZE);
+	      wh_list* node3 = wd->wh_hash_i[p_hash_i];
+	      while (node3 != NULL) {
+	        if ((pn == node3->pp) && (ppi == node3->pn)) {
+	          index_i = node3->index;
+	          break;
+	        }
+	        node3 = node3->next;
+	      }
+	      if (index_i < 0) {node2 = node2->next; continue;}
+
+	      unsigned int p_hash_f = pn + wd->n_sds_p_f*(ppf % HASH_SIZE);
+	      node3 = wd->wh_hash_f[p_hash_f];
+	      while (node3 != NULL) {
+	        if ((pn == node3->pp) && (ppf == node3->pn)) {
+	          index_f = node3->index;
+	          break;
+	        }
+	        node3 = node3->next;
+	      }
+	      if (index_f < 0) {node2 = node2->next; continue;}
+              eigen_list* eig_pair = transition;
+              int i_trans = 0;
+              while (eig_pair != NULL) {
+                int psi_i = eig_pair->eig_i;
+                int psi_f = eig_pair->eig_f;
+	        density[i_trans] += wd->bc_i[psi_i + wd->n_eig_i*index_i]*wd->bc_f[psi_f + wd->n_eig_f*index_f]*phase1*phase2;
+                i_trans++;
+                eig_pair = eig_pair->next;
+              }
+	    } 
+	    node2 = node2->next;
+	  }
         } 
       }
     }
@@ -1845,40 +2317,37 @@ void trace_1body_t0_nodes(int a, int b, int num_mj, int n_sds_int, int* a1_array
   return;
 }
 
-void trace_1body_t2_nodes(int a, int b, int num_mj_1, float mj_min_1, int num_mj_2, float mj_min_2, sd_list** a1_list_i, sd_list** a1_list_f, wfnData* wd, int i_op, eigen_list *transition, double* density) {
+void trace_one_body_nodes_dmtp1(int a, int b, int num_mj_p_i, float mj_min_p_i, int num_mj_n_i, float mj_min_n_i, sd_list** n1_list_i, sd_list** p1_list_f, wfnData* wd, int i_op, eigen_list *transition, double* density) {
 /* 
 
 */
-  int ns = wd->n_shells;
-  for (int imj1 = 0; imj1 < num_mj_1; imj1++) {
-    float mj1 = imj1 + mj_min_1;
-    for (int imj2 = 0; imj2 < num_mj_2; imj2++) {
-      float mj2 = imj2 + mj_min_2;
-      if ((mj1 + mj2 != 0) && (mj1 + mj2 != 0.5)) {continue;}
-      for (int ipar1 = 0; ipar1 <= 1; ipar1++) {
-     //   for (int ipar2 = 0; ipar2 <= 1; ipar2++){
-        int ipar2;
+  for (int imjp = 0; imjp < num_mj_p_i; imjp++) {
+    float mjp = imjp + mj_min_p_i;
+    for (int imjn = 0; imjn < num_mj_n_i; imjn++) {
+      float mjn = imjn + mj_min_n_i;
+      if ((mjp + mjn != 0) && (mjp + mjn != 0.5)) {continue;}
+      for (int ipar_p = 0; ipar_p <= 1; ipar_p++) {
+        int ipar_n;
 	if (wd->parity_i == '+') {
-	  if (ipar1 == 0) {
-		  ipar2 = 0;
+	  if (ipar_p == 0) {
+		  ipar_n = 0;
 	  } else {
-		  ipar2 = 1;
+		  ipar_n = 1;
 	  }
 	} else if (wd->parity_i == '-') {
-		if (ipar1 == 0) {
-			ipar2 = 1;
+		if (ipar_p == 0) {
+			ipar_n = 1;
 		} else {
-			ipar2 = 0;
+			ipar_n = 0;
 		}
 	} else {printf("Parity error\n"); exit(0);}
-        sd_list* node1 = a1_list_i[ipar1 + 2*(imj1 + num_mj_1*b)];
+        sd_list* node1 = n1_list_i[ipar_n + 2*(imjn + num_mj_n_i*b)];
         // Loop over final states resulting from 2x a_op
         while (node1 != NULL) {
           unsigned int ppf = node1->pn; // Get final state p_f
           unsigned int ppi = node1->pi; // Get initial state p_i
           int phase1 = node1->phase;
-		//if (ipar == 0) {ipar2 = 0;} else {ipar2 = 1;}
-          sd_list* node2 = a1_list_f[ipar2 + 2*(imj2 + num_mj_2*a)]; //hash corresponds to a_op operators
+          sd_list* node2 = p1_list_f[ipar_p + 2*(imjp + num_mj_p_i*a)]; //hash corresponds to a_op operators
 
         // Loop over n_f  
         //int m_pf = m_from_p(ppf, ns, npp, wd->jz_shell);
