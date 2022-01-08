@@ -2430,3 +2430,13 @@ void trace_one_body_nodes_dmtp1(int a, int b, int num_mj_p_i, float mj_min_p_i, 
   return;
 }
 
+int test_suite() {
+  int pass = 1;
+  if (!test_log_factorial()) {pass = 0;}
+  if (!test_clebsch_gordan()) {pass = 0;}
+  if (!test_n_choose_k()) {pass = 0;}
+  if (!test_slater_routines()) {pass = 0;}
+
+  return pass;
+}
+

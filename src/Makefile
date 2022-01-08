@@ -1,10 +1,10 @@
 CC=gcc -m64 
 CFLAGS=-c -Wall -lm 
 
-all: SpeED-DMG
+all: DMG
 
-SpeED-DMG: main.o angular.o slater.o file_io.o density.o 
-	$(CC) main.o angular.o slater.o file_io.o density.o -o SpeED-DMG -lm
+DMG: main.o angular.o slater.o file_io.o density.o 
+	$(CC) main.o angular.o slater.o file_io.o density.o -o DMG -lm
 
 main.o: main.c
 	$(CC) $(CFLAGS) main.c
@@ -22,4 +22,4 @@ density.o: density.c
 	$(CC) $(CFLAGS) density.c
 
 clean:
-	rm -rf *.o SpeED-DMG
+	rm -rf *.o DMG

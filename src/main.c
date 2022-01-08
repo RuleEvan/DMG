@@ -5,6 +5,7 @@ int main(int argc, char *argv[]) {
   double cpu_time;
   start = clock();
   if (argc != 2) {printf("Please supply only the parameter file name to the command line\n"); exit(0);}
+  if (strcmp(argv[1],"--test") == 0) {printf("Running test suite\n"); test_suite(); exit(0);}
   speedParams* sp = read_parameter_file(argv[1]);
   if ((sp->n_body == 1)) {
     one_body_density(sp);
