@@ -76,5 +76,7 @@ void build_one_body_jumps_dmtp1_trunc(int n_s, int n_proton_f, int num_mj_p_i, f
 int test_suite();
 double compute_2body_J0_T0_sum_rule(char *input_file);
 double compute_2body_J0_T1_sum_rule(char *input_file);
+double compute_2body_J0_T2_sum_rule(char *input_file);
+
 
 #endif
