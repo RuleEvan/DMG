@@ -74,5 +74,7 @@ void build_one_body_jumps_dmt0_trunc(int n_s, int n_p, float mj_min, float mj_ma
 void build_one_body_jumps_dmtp1_trunc(int n_s, int n_proton_f, int num_mj_p_i, float mj_min_p_i, float mj_max_p_i, int num_mj_p_f, float mj_min_p_f, float mj_max_p_f, sd_list** p1_list_f, int n_neutron_i, int num_mj_n_i, float mj_min_n_i, float mj_max_n_i, sd_list** n1_list_i, int* jz_shell, int* l_shell, int* w_shell, int w_max_p_i, int w_max_p_f, int w_max_n_i, int w_max_n_f);
 
 int test_suite();
+double compute_2body_J0_T0_sum_rule(char *input_file);
+double compute_2body_J0_T1_sum_rule(char *input_file);
 
 #endif

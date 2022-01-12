@@ -8,7 +8,6 @@ float m_from_p(unsigned int p, int n_s, int n_p, int* m_shell);
 int parity_from_p(unsigned int p, int n_s, int n_p, int* l_shell);
 unsigned int a_op(int n_s, int n_p, unsigned int p, int n_op, int* phase, int j_min);
 unsigned int a_op_dag(int n_s, int n_p, unsigned int p, int n_op, int* phase, int j_min);
-void generate_binomial_file();
 int j_min_from_p(int n_s, int n_p, unsigned int p);
 float max_mj(int n_s, int n_p, int *m_shell);
 float min_mj(int n_s, int n_p, int *m_shell);

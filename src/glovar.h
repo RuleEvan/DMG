@@ -11,7 +11,8 @@
 // Choose print format for one-body density matrices
 // 0 is GLASGOW format
 // 1 is BIGSTICK format
-#define I_FORMAT 0
+#define I_FORMAT 1
+#define I_VERBOSE 1
 
 // Macros for MIN and MAX functions
 #define MIN(a,b) ((a) < (b) ? (a):(b))

@@ -28,17 +28,72 @@ int test_slater_routines() {
 
   int *occ = malloc(np*sizeof(int));
   int *lshell = malloc(ns*sizeof(int));
-  int jzshell = malloc(ns*sizeof(int));
+  int *wshell = malloc(ns*sizeof(int));
+
+  int *jzshell = malloc(ns*sizeof(int));
+
+  lshell[0] = 1;
+  lshell[1] = 1;
+  lshell[2] = 1;
+  lshell[3] = 1;
+  lshell[4] = 2;
+  lshell[5] = 2;
+  lshell[6] = 2;
+  lshell[7] = 2;
+  lshell[8] = 2;
+  lshell[9] = 2;
+
+  jzshell[0] = -3;
+  jzshell[1] = -1;
+  jzshell[2] = 1;
+  jzshell[3] = 3;
+  jzshell[4] = -5;
+  jzshell[5] = -3;
+  jzshell[6] = -1;
+  jzshell[7] = 1;
+  jzshell[8] = 3;
+  jzshell[9] = 5;
+
+  wshell[0] = 1;
+  wshell[1] = 1;
+  wshell[2] = 1;
+  wshell[3] = 1;
+  wshell[4] = 3;
+  wshell[5] = 3;
+  wshell[6] = 3;
+  wshell[7] = 3;
+  wshell[8] = 3;
+  wshell[9] = 3;
+
+  float minmj = min_mj(ns, np, jzshell);
+  if (minmj != -6.5) {pass = 0;}
+  float maxmj = max_mj(ns, np, jzshell);
+  if (maxmj != 6.5) {pass = 0;}
+  
+  int wmin = min_w(ns, np, wshell);
+  if (wmin != 7) {pass = 0;} 
+
 
   occ[0] = 1;
   occ[1] = 2;
   occ[2] = 3;
   occ[3] = 4;
   occ[4] = 5;
+
   unsigned int pi = p_step(ns, np, occ);
   unsigned int pf;
   int phase = 1;
   int j_min =  j_min_from_p(ns, np, pi);
+  if (j_min != 1) {pass = 0;}
+
+  int par = parity_from_p(pi, ns, np, lshell);
+  if (par != 1) {pass = 0;}
+
+  int w = w_from_p(pi, ns, np, wshell);
+  if (w != 7) {pass = 0;}
+
+  float mj = m_from_p(pi, ns, np, jzshell);
+  if (mj != -2.5) {pass = 0;}
 
 
   if (pi != 1) {pass = 0;};
@@ -63,10 +118,24 @@ int test_slater_routines() {
   pf = a_op(ns, np, pi, np, &phase, j_min);
   if (pf != 1) {pass = 0;}
   if (phase != 1) {pass = 0;}
+  par = parity_from_p(pf, ns, np - 1, lshell);
+  if (par != 1) {pass = 0;}
+  w = w_from_p(pf, ns, np - 1, wshell);
+  if (w != 4) {pass = 0;}
+  mj = m_from_p(pf, ns, np - 1, jzshell);
+  if (mj != 0) {pass = 0;}
+
+
   phase = 1;
   pf = a_op(ns, np, pi, np - 1, &phase, j_min);
   if (pf != 2) {pass = 0;}
   if (phase != -1) {pass = 0;}
+  par = parity_from_p(pf, ns, np - 1, lshell);
+  if (par != -1) {pass = 0;}
+  w = w_from_p(pf, ns, np - 1, wshell);
+  if (w != 6) {pass = 0;}
+  mj = m_from_p(pf, ns, np - 1, jzshell);
+  if (mj != -4) {pass = 0;}
 
 
   occ[0] = 6;
@@ -75,28 +144,30 @@ int test_slater_routines() {
   occ[3] = 9;
   occ[4] = 10;
 
+
   pi = p_step(ns, np, occ);
   if (pi != 252) {pass = 0;};
+  par = parity_from_p(pi, ns, np, lshell);
+  if (par != 1) {pass = 0;}
+  w = w_from_p(pi, ns, np, wshell);
+  if (w != 15) {pass = 0;}
+  mj = m_from_p(pi, ns, np, jzshell);
+  if (mj != 2.5) {pass = 0;}
 
-  occ[0] = 7;
-  occ[1] = 2;
+  occ[0] = 2;
+  occ[1] = 4;
   occ[2] = 5;
-  occ[3] = 4;
+  occ[3] = 7;
   occ[4] = 10;
 
   pi = p_step(ns, np, occ);
-  if (pi != 157) {pass = 0;};
-
-  occ[0] = 7;
-  occ[1] = 2;
-  occ[2] = 5;
-  occ[3] = 4;
-  occ[4] = 11;
-
-  pi = p_step(ns, np, occ);
-  printf("pi: %u\n", pi);
-  if (pi != 158) {pass = 0;};
- 
+  if (pi != 168) {pass = 0;}
+  par = parity_from_p(pi, ns, np, lshell);
+  if (par != 1) {pass = 0;}
+  w = w_from_p(pi, ns, np, wshell);
+  if (w != 11) {pass = 0;}
+  mj = m_from_p(pi, ns, np, jzshell);
+  if (mj != 0.5) {pass = 0;}
 
   if (pass == 1) {
     printf("Test Slater Routines: Pass\n");

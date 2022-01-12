@@ -5,6 +5,9 @@
    The code relies on a factorization between proton and neutron Slater determinants
 */
 
+extern int VERBOSE;
+int FORMAT = I_FORMAT;
+
 void two_body_density(speedParams *sp) {
   // Master routine for generating two-body density matrices
   // Read in data 
@@ -40,7 +43,7 @@ void two_body_density(speedParams *sp) {
   unsigned int n_sds_n_int1 = get_num_sds(wd->n_shells, wd->n_neutron_f - 1);
   unsigned int n_sds_n_int2 = get_num_sds(wd->n_shells, wd->n_neutron_f - 2);
 
-  printf("Intermediate SDs: p1: %d n1: %d, p2: %d, n2: %d\n", n_sds_p_int1, n_sds_n_int1, n_sds_p_int2, n_sds_n_int2);
+  //printf("Intermediate SDs: p1: %d n1: %d, p2: %d, n2: %d\n", n_sds_p_int1, n_sds_n_int1, n_sds_p_int2, n_sds_n_int2);
 
   // Determine the min and max mj values of proton/neutron SDs
   float mj_min_p_i = min_mj(ns, wd->n_proton_i, wd->jz_shell);
@@ -66,8 +69,8 @@ void two_body_density(speedParams *sp) {
   int num_mj_p_i = mj_max_p_i - mj_min_p_i + 1;
   int num_mj_n_i = mj_max_n_i - mj_min_n_i + 1;
 
-  printf("Number of initial proton sectors:  %d\n", num_mj_p_i);
-  printf("Number of initial neutron sectors: %d\n", num_mj_n_i);
+  //printf("Number of initial proton sectors:  %d\n", num_mj_p_i);
+  //printf("Number of initial neutron sectors: %d\n", num_mj_n_i);
 
   float mj_min_p_f = min_mj(ns, wd->n_proton_f, wd->jz_shell);
   float mj_max_p_f = max_mj(ns, wd->n_proton_f, wd->jz_shell);
@@ -92,8 +95,8 @@ void two_body_density(speedParams *sp) {
   int num_mj_p_f = mj_max_p_f - mj_min_p_f + 1;
   int num_mj_n_f = mj_max_n_f - mj_min_n_f + 1;
 
-  printf("Number of final proton sectors:  %d\n", num_mj_p_f);
-  printf("Number of final neutron sectors: %d\n", num_mj_n_f);
+  //printf("Number of final proton sectors:  %d\n", num_mj_p_f);
+  //printf("Number of final neutron sectors: %d\n", num_mj_n_f);
 
 
   // Allocate space for jump lists
@@ -115,7 +118,7 @@ void two_body_density(speedParams *sp) {
   int* n1_array_f = (int*) calloc(ns*n_sds_n_int1, sizeof(int));
   int* n2_array_f = (int*) calloc(ns*ns*n_sds_n_int2, sizeof(int));
 
-  if (wd->w_max_i > 0 || wd->w_max_f > 0) {printf("Truncation scheme detected...generating truncated jumps...\n");
+  if (wd->w_max_i > 0 || wd->w_max_f > 0) {if (VERBOSE) {printf("Truncation scheme detected...generating truncated jumps...\n");}
     int w_min_p_i = min_w(ns, wd->n_proton_i, wd->w_shell);
     int w_min_n_i = min_w(ns, wd->n_neutron_i, wd->w_shell);
     int w_min_p_f = min_w(ns, wd->n_proton_f, wd->w_shell);
@@ -128,50 +131,40 @@ void two_body_density(speedParams *sp) {
 
     if (wd->same_basis) {
     // We assume that same basis implies that magnetic isospin is unchanged
-      printf("Building jumps for delta_MT = 0\n");
+      if (VERBOSE) {printf("Building jumps for delta_MT = 0\n");}
       build_two_body_jumps_dmt0_trunc(wd->n_shells, wd->n_proton_i, mj_min_p_i, mj_max_p_i, num_mj_p_i, wd->n_sds_p_i, n_sds_p_int1, n_sds_p_int2, p1_array_f, p2_array_f, p0_list_i, p1_list_i, p2_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_p_i);
       build_two_body_jumps_dmt0_trunc(wd->n_shells, wd->n_neutron_i, mj_min_n_i, mj_max_n_i, num_mj_n_i, wd->n_sds_n_i, n_sds_n_int1, n_sds_n_int2, n1_array_f, n2_array_f, n0_list_i, n1_list_i, n2_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_n_i);
-      printf("Done.\n");
     } else if (mt_op == 2) {
-      printf("Building jumps for delta_MT = +2\n");
+      if (VERBOSE) {printf("Building jumps for delta_MT = +2\n");}
       build_two_body_jumps_dmtp2_trunc(wd->n_shells, wd->n_proton_f, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, wd->n_sds_p_f, p2_list_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, wd->n_sds_n_i, n2_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_p_i, w_max_p_f, w_max_n_i, w_max_n_f);
-      printf("Done.\n");
     } else if (mt_op == -2) {
-      printf("Building jumps for delta_Mt = -2\n");
+      if (VERBOSE) {printf("Building jumps for delta_Mt = -2\n");}
       build_two_body_jumps_dmtp2_trunc(wd->n_shells, wd->n_neutron_f, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, wd->n_sds_n_f, n2_list_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, wd->n_sds_p_i, p2_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_n_i, w_max_n_f, w_max_p_i, w_max_p_f);
-      printf("Done.\n");
     } else if (mt_op == 1) {
-      printf("Building jumps for delta_Mt = +1\n");
+      if (VERBOSE) {printf("Building jumps for delta_Mt = +1\n");}
       build_two_body_jumps_dmtp1_trunc(wd->n_shells, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, wd->n_proton_f, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_i, p1_list_f, p2_array_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, wd->n_neutron_f, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_i, n2_list_i, n1_array_f, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_p_i, w_max_p_f, w_max_n_i, w_max_n_f);    
-      printf("Done.\n");
     } else if (mt_op == -1) {
-      printf("Building jumps for delta_Mt = -1\n");
+      if (VERBOSE) {printf("Building jumps for delta_Mt = -1\n");}
       build_two_body_jumps_dmtp1_trunc(wd->n_shells, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, wd->n_neutron_f, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_i, n1_list_f, n2_array_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, wd->n_proton_f, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_i, p2_list_i, p1_array_f, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_n_i, w_max_n_f, w_max_p_i, w_max_p_f);
-      printf("Done.\n");
     }
   } else {
     if (wd->same_basis) {
     // We assume that same basis implies that magnetic isospin is unchanged
-      printf("Building jumps for delta_MT = 0\n");
+      if (VERBOSE) {printf("Building jumps for delta_MT = 0\n");}
       build_two_body_jumps_dmt0_alt(wd->n_shells, wd->n_proton_i, mj_min_p_i, mj_max_p_i, num_mj_p_i, wd->n_sds_p_i, n_sds_p_int1, n_sds_p_int2, p1_array_f, p2_array_f, p0_list_i, p1_list_i, p2_list_i, p2_list_if, wd->jz_shell, wd->l_shell);
       build_two_body_jumps_dmt0_alt(wd->n_shells, wd->n_neutron_i, mj_min_n_i, mj_max_n_i, num_mj_n_i, wd->n_sds_n_i, n_sds_n_int1, n_sds_n_int2, n1_array_f, n2_array_f, n0_list_i, n1_list_i, n2_list_i, n2_list_if, wd->jz_shell, wd->l_shell);
-      printf("Done.\n");
     } else if (mt_op == 2) {
-      printf("Building jumps for delta_MT = +2\n");
+      if (VERBOSE) {printf("Building jumps for delta_MT = +2\n");}
       build_two_body_jumps_dmtp2(wd->n_shells, wd->n_proton_f, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, wd->n_sds_p_f, p2_list_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, wd->n_sds_n_i, n2_list_i, wd->jz_shell, wd->l_shell);
-      printf("Done.\n");
     } else if (mt_op == -2) {
-      printf("Building jumps for delta_Mt = -2\n");
+      if (VERBOSE) {printf("Building jumps for delta_Mt = -2\n");}
       build_two_body_jumps_dmtp2(wd->n_shells, wd->n_neutron_f, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, wd->n_sds_n_f, n2_list_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, wd->n_sds_p_i, p2_list_i, wd->jz_shell, wd->l_shell);
-      printf("Done.\n");
     } else if (mt_op == 1) {
-      printf("Building jumps for delta_Mt = +1\n");
+      if (VERBOSE) {printf("Building jumps for delta_Mt = +1\n");}
       build_two_body_jumps_dmtp1(wd->n_shells, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, wd->n_proton_f, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_i, p1_list_f, p2_array_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, wd->n_neutron_f, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_i, n2_list_i, n1_array_f, wd->jz_shell, wd->l_shell);    
-      printf("Done.\n");
     } else if (mt_op == -1) {
-      printf("Building jumps for delta_Mt = -1\n");
+      if (VERBOSE) {printf("Building jumps for delta_Mt = -1\n");}
       build_two_body_jumps_dmtp1(wd->n_shells, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, wd->n_neutron_f, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_i, n1_list_f, n2_array_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, wd->n_proton_f, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_i, p2_list_i, p1_array_f, wd->jz_shell, wd->l_shell);
-      printf("Done.\n");
     }
   }
 
@@ -207,7 +200,7 @@ void two_body_density(speedParams *sp) {
     if (cg_t == 0.0) {trans = trans->next; continue;}
     cg_j *= pow(-1.0, jf - ji)/sqrt(2*jf + 1);
     cg_t *= pow(-1.0, tf - ti)/sqrt(2*tf + 1);
-    printf("Initial state: # %d J: %g T: %g Final state: # %d J: %g T: %g\n", psi_i + 1, ji, ti, psi_f + 1, jf, tf);
+    if (VERBOSE) {printf("Initial state: # %d J: %g T: %g Final state: # %d J: %g T: %g\n", psi_i + 1, ji, ti, psi_f + 1, jf, tf);}
     strcpy(output_density_file, sp->out_file_base);
     sprintf(output_suffix, "_J%d_T%d_%d_%d.dens", j_op, t_op, psi_i, psi_f);
     strcat(output_density_file, output_suffix);
@@ -230,7 +223,7 @@ void two_body_density(speedParams *sp) {
         float j4 = wd->j_orb[i_orb3];
         // Loop over orbital d
         for (int i_orb4 = 0; i_orb4 <= i_orb3; i_orb4++) {
-          printf("%d %d %d %d\n", i_orb1, i_orb2, i_orb3, i_orb4);
+          //printf("%d %d %d %d\n", i_orb1, i_orb2, i_orb3, i_orb4);
           if (pow(-1.0, wd->l_orb[i_orb1] + wd->l_orb[i_orb2] + wd->l_orb[i_orb3] + wd->l_orb[i_orb4]) != 1.0) {continue;} // Parity
           float j3 = wd->j_orb[i_orb4];
           // Allocate storage for each j12 and j34
@@ -241,14 +234,14 @@ void two_body_density(speedParams *sp) {
           int j_max_34 = j3 + j4;
           int j_dim_34 = j_max_34 - j_min_34 + 1;
           int j_dim = j_dim_12*j_dim_34;
-          if (j_op > j_max_12 + j_max_34) {printf("max: %g, %g, %g, %g\n", j1, j2, j3, j4); continue;}
+         // if (j_op > j_max_12 + j_max_34) {printf("max: %g, %g, %g, %g\n", j1, j2, j3, j4); continue;}
           int j_tot_min = j_max_12 + j_max_34;
           for (int j12 = j_min_12; j12 <= j_max_12; j12++) {
             for (int j34 = j_min_34; j34 <= j_max_34; j34++) {
               if (abs(j12 - j34) < j_tot_min) {j_tot_min = abs(j12 - j34);}
             }
           }
-          if (j_op < j_tot_min) {printf("min: %g, %g, %g, %g\n", j1, j2, j3, j4); continue;}
+         // if (j_op < j_tot_min) {printf("min: %g, %g, %g, %g\n", j1, j2, j3, j4); continue;}
           j_store = realloc(j_store, sizeof(double)*4*j_dim*sp->n_trans);
           for (int k = 0; k < 4*j_dim*sp->n_trans; k++) {
             j_store[k] = 0.0;
@@ -357,7 +350,7 @@ void two_body_density(speedParams *sp) {
                   } else if (mt_op == -2) { // n^dag n^dag p p
                       trace_two_body_nodes_dmtp2(a, b, c, d, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, p2_list_i, n2_list_f, wd, 0, sp->transition_list, density);
                   } else {printf("Error in mt_op: %d\n", mt_op); exit(0);}
-                  printf("%g %g %g %g %g %g %g %g\n", mj1, mj2, mj3, mj4, mt1, mt2, mt3, mt4); 
+                  //printf("%g %g %g %g %g %g %g %g\n", mj1, mj2, mj3, mj4, mt1, mt2, mt3, mt4); 
                   for (int j12 = j_min_12; j12 <= j_max_12; j12++) {
                     if ((mj1 + mj2 > j12) || (mj1 + mj2 < -j12)) {continue;}
                     float cg_j12 = clebsch_gordan(j1, j2, j12, mj1, mj2, mj1 + mj2);
@@ -540,7 +533,7 @@ void one_body_density(speedParams* sp) {
   int* p1_array_f = (int*) calloc(ns*n_sds_p_int, sizeof(int));
   int* n1_array_f = (int*) calloc(ns*n_sds_n_int, sizeof(int));
   
-  if (wd->w_max_i > 0 || wd->w_max_f > 0) {printf("Truncation scheme detected...generating truncated jumps...\n");
+  if (wd->w_max_i > 0 || wd->w_max_f > 0) {if (VERBOSE) {printf("Truncation scheme detected...generating truncated jumps...\n");}
     int w_min_p_i = min_w(ns, wd->n_proton_i, wd->w_shell);
     int w_min_n_i = min_w(ns, wd->n_neutron_i, wd->w_shell);
     int w_min_p_f = min_w(ns, wd->n_proton_f, wd->w_shell);
@@ -553,40 +546,37 @@ void one_body_density(speedParams* sp) {
 
 
     if (wd->same_basis) {
-      printf("Building initial and final state proton jumps...\n");
+      if (VERBOSE) {printf("Building initial and final state proton jumps...\n");}
       build_one_body_jumps_dmt0_trunc(wd->n_shells, wd->n_proton_i, mj_min_p_i, mj_max_p_i, num_mj_p_i, wd->n_sds_p_i, n_sds_p_int, p1_array_f, p0_list_i, p1_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_p_i); 
-      printf("Done.\n");
 
-      printf("Building initial and final state neutron jumps...\n");
+      if (VERBOSE) {printf("Building initial and final state neutron jumps...\n");}
       build_one_body_jumps_dmt0_trunc(wd->n_shells, wd->n_neutron_i, mj_min_n_i, mj_max_n_i, num_mj_n_i, wd->n_sds_n_i, n_sds_n_int, n1_array_f, n0_list_i, n1_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_n_i); 
-      printf("Done.\n");
     } else if (mt_op == 1) {
-      printf("Delta MT = +1\n");
+      if (VERBOSE) {printf("Delta MT = +1\n");}
       build_one_body_jumps_dmtp1_trunc(wd->n_shells, wd->n_proton_f, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, n1_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_p_i, w_max_p_f, w_max_n_i, w_max_n_f);
     } else if (mt_op == -1) {
-      printf("Delta MT = -1\n");
+      if (VERBOSE) {printf("Delta MT = -1\n");}
       build_one_body_jumps_dmtp1_trunc(wd->n_shells, wd->n_neutron_f, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, p1_list_i, wd->jz_shell, wd->l_shell, wd->w_shell, w_max_n_i, w_max_n_f, w_max_p_i, w_max_p_f);
     } else {printf("Error in delta MT\n"); exit(0);} 
   } else {
   if (wd->same_basis) {
-      printf("Building initial and final state proton jumps...\n");
+      if (VERBOSE) {printf("Building initial and final state proton jumps...\n");}
       build_one_body_jumps_dmt0(wd->n_shells, wd->n_proton_i, mj_min_p_i, mj_max_p_i, num_mj_p_i, wd->n_sds_p_i, n_sds_p_int, p1_array_f, p0_list_i, p1_list_i, wd->jz_shell, wd->l_shell); 
-      printf("Done.\n");
 
-      printf("Building initial and final state neutron jumps...\n");
+      if (VERBOSE) {printf("Building initial and final state neutron jumps...\n");}
       build_one_body_jumps_dmt0(wd->n_shells, wd->n_neutron_i, mj_min_n_i, mj_max_n_i, num_mj_n_i, wd->n_sds_n_i, n_sds_n_int, n1_array_f, n0_list_i, n1_list_i, wd->jz_shell, wd->l_shell); 
-      printf("Done.\n");
     } else if (mt_op == 1) {
-      printf("Delta MT = +1\n");
+      if (VERBOSE) {printf("Delta MT = +1\n");}
       build_one_body_jumps_dmtp1(wd->n_shells, wd->n_proton_f, num_mj_p_i, mj_min_p_i, mj_max_p_i, num_mj_p_f, mj_min_p_f, mj_max_p_f, p1_list_f, wd->n_neutron_i, num_mj_n_i, mj_min_n_i, mj_max_n_i, n1_list_i, wd->jz_shell, wd->l_shell);
     } else if (mt_op == -1) {
-      printf("Delta MT = -1\n");
+      if (VERBOSE) {printf("Delta MT = -1\n");}
       build_one_body_jumps_dmtp1(wd->n_shells, wd->n_neutron_f, num_mj_n_i, mj_min_n_i, mj_max_n_i, num_mj_n_f, mj_min_n_f, mj_max_n_f, n1_list_f, wd->n_proton_i, num_mj_p_i, mj_min_p_i, mj_max_p_i, p1_list_i, wd->jz_shell, wd->l_shell);
     } else {printf("Error in delta MT\n"); exit(0);} 
   }
   // Loop over transitions
   eigen_list* trans = sp->transition_list;
-  eigen_list* new_trans = malloc(sizeof(*new_trans));
+  eigen_list *new_trans = malloc(sizeof(*new_trans));
+  new_trans = NULL;
   int i_trans = 0;
   while (trans != NULL) {
     int psi_i = trans->eig_i;
@@ -604,21 +594,19 @@ void one_body_density(speedParams* sp) {
     for (int j_op = (int) (fabs(jf - ji)); j_op <= (int) (ji + jf); j_op++) { 
       for (int t_op = MAX(0,abs(ti-tf)); t_op <= MIN(1,abs(ti+tf)); t_op++) {
         cg_j = clebsch_gordan(j_op, ji, jf, 0, mji,mjf);
-        if (cg_j == 0.0) {printf("Warning: CG coefficient is zero for allowed transition: Ji = %g Jf = %g Jop = %d \nComputing the density matrix for this operator requires the raising/lowering operators (not currently supported.)\n This entry will be omitted even though there could be non-zero contributions.", ji, jf, j_op); continue;}
+        if (fabs(cg_j) < pow(10, -6)) {if (VERBOSE) {printf("Warning: CG coefficient is zero for allowed transition: Ji = %g Jf = %g Jop = %d \nComputing the density matrix for this operator requires the raising/lowering operators (not currently supported.)\n This entry will be omitted even though there could be non-zero contributions.\n", ji, jf, j_op);} continue;}
         cg_t = clebsch_gordan(t_op, ti, tf, mt_op, mti, mtf);
-        if (cg_t == 0.0) {printf("Warning: CG coefficient is zero for allowed transition: Ti = %g Tf = %g Top = %d \nComputing the density matrix for this operator requires the raising/lowering operators (not currently supported.) \n This entry will be omitted even though there could be non-zero contributions.", ti, tf, t_op); continue;}
+        if (fabs(cg_t) < pow(10, -6)) {if (VERBOSE) {printf("Warning: CG coefficient is zero for allowed transition: Ti = %g Tf = %g Top = %d \nComputing the density matrix for this operator requires the raising/lowering operators (not currently supported.) \n This entry will be omitted even though there could be non-zero contributions.\n", ti, tf, t_op);} continue;}
         if (new_trans == NULL) {
           new_trans = create_eigen_node(psi_i, psi_f, NULL);
         } else {
           eigen_append(new_trans, psi_i, psi_f);
         }
-
         i_trans++;
       }
     }
     trans = trans->next;
   }
-
   
   double* cg_fact = (double*) calloc(i_trans, sizeof(double));
   int* j_op_arr = (int*) calloc(i_trans, sizeof(int));
@@ -648,9 +636,9 @@ void one_body_density(speedParams* sp) {
     for (int j_op = (int) abs(jf - ji); j_op <= (int) (ji + jf); j_op++) {
       for (int t_op = MAX(0,abs(ti-tf)); t_op <= MIN(1,ti+tf); t_op++) {
         cg_j = clebsch_gordan(j_op, ji, jf, 0, mji,mjf);
-        if (cg_j == 0.0) {continue;}
+        if (fabs(cg_j) < pow(10, -6)) {continue;}
         cg_t = clebsch_gordan(t_op, ti, tf, mt_op, mti, mtf);
-        if (cg_t == 0.0) {continue;}
+        if (fabs(cg_t) < pow(10, -6)) {continue;}
         cg_j *= pow(-1.0, j_op - ji + jf)*sqrt(2*j_op + 1)/sqrt(2*jf + 1);
         cg_t *= pow(-1.0, t_op - ti + tf)*sqrt(2*t_op + 1)/sqrt(2*tf + 1);
         cg_fact[i_trans] = cg_j*cg_t;
@@ -662,7 +650,6 @@ void one_body_density(speedParams* sp) {
         tf_arr[i_trans] = (int) (2*tf);
         ei_arr[i_trans] = wd->e_nuc_i[psi_i];
         ef_arr[i_trans] = wd->e_nuc_f[psi_f];
-
         i_trans++;
       }
     }
@@ -737,7 +724,7 @@ void one_body_density(speedParams* sp) {
   i_trans = 0;
   int psi_i_prev = -1;
   int psi_f_prev = -1;
-  if (I_FORMAT == 0) {
+  if (FORMAT == 0) {
     while (trans != NULL) {
       int psi_i = trans->eig_i;
       int psi_f = trans->eig_f;
@@ -747,7 +734,6 @@ void one_body_density(speedParams* sp) {
       int jf = jf_arr[i_trans];
       int ti = ti_arr[i_trans];
       int tf = tf_arr[i_trans];
-
       if ((psi_i_prev == -1 && psi_f_prev == -1)) {
         strcpy(output_density_file, sp->out_file_base);
         sprintf(output_suffix, "_%d_%d.dens", psi_i, psi_f);
@@ -775,7 +761,7 @@ void one_body_density(speedParams* sp) {
       trans = trans->next;
     }    
     fclose(out_file);
-  } else if (I_FORMAT == 1) {
+  } else if (FORMAT == 1) {
 
     while (trans != NULL) {
       int psi_i = trans->eig_i;
@@ -1087,7 +1073,6 @@ void trace_two_body_nodes_dmtp1_31(int a, int b, int c, int d, int num_mj_1, flo
 void trace_two_body_nodes_dmt0_40(int a, int b, int c, int d, int num_mj_p_i, float mj_min_p_i, int num_mj_n_i, float mj_min_n_i, int n_sds_int2, int* p2_array_f, sd_list** p2_list_i, wf_list** n0_list_i, wfnData* wd, int i_op, eigen_list* transition, double* density) {
   int ns = wd->n_shells;
 
-  printf("Calling 40\n"); 
 
   for (int imjp = 0; imjp < num_mj_p_i; imjp++) {
     float mjp = imjp + mj_min_p_i;
@@ -1317,8 +1302,8 @@ void trace_two_body_nodes_dmtp2(int a, int b, int c, int d, int num_mj_p_i, floa
 }
 
 void trace_two_body_nodes_dmt0_22_alt(int a, int b, int c, int d, int num_mj_p_i, float mj_min_p_i, float mj_min_p_f, float mj_max_p_f, int num_mj_n_i, float mj_min_n_i, float mj_min_n_f, float mj_max_n_f, sd_list** p2_list_if, sd_list** n2_list_if, wfnData* wd, eigen_list* transition, double* density, int* jz_shell) {
-  printf("Calling 22\n");
-  int ns = wd->n_shells;
+  
+	int ns = wd->n_shells;
   for (int imjp = 0; imjp < num_mj_p_i; imjp++) {
     float mjp = imjp + mj_min_p_i;
     if (mjp + jz_shell[a]/2.0 - jz_shell[b]/2.0 > mj_max_p_f || mjp + jz_shell[a]/2.0 - jz_shell[b]/2.0 < mj_min_p_f) {continue;}
@@ -1367,7 +1352,7 @@ void trace_two_body_nodes_dmt0_22_alt(int a, int b, int c, int d, int num_mj_p_i
               }
               node3 = node3->next;
             }
-            if (index_i < 0) {node_ni = node_ni->next; printf("Not found\n"); continue;}
+            if (index_i < 0) {node_ni = node_ni->next; continue;}
             node3 = wd->wh_hash_f[p_hash_f];
             while (node3 != NULL) {
               if ((pnf == node3->pn) && (ppf == node3->pp)) {
@@ -1376,7 +1361,7 @@ void trace_two_body_nodes_dmt0_22_alt(int a, int b, int c, int d, int num_mj_p_i
               }
               node3 = node3->next;
             }
-            if (index_f < 0) {node_ni = node_ni->next; printf("Not found\n"); continue;}
+            if (index_f < 0) {node_ni = node_ni->next; continue;}
             eigen_list* eig_pair = transition;
             int i_trans = 0;
             while (eig_pair != NULL) {
@@ -1398,7 +1383,7 @@ void trace_two_body_nodes_dmt0_22_alt(int a, int b, int c, int d, int num_mj_p_i
 
 
 void trace_two_body_nodes_dmt0_22(int a, int b, int c, int d, int num_mj_p_i, float mj_min_p_i, float mj_min_p_f, float mj_max_p_f, int num_mj_n_i, float mj_min_n_i, float mj_min_n_f, float mj_max_n_f, int n_sds_p_int1, int n_sds_n_int1, sd_list** p1_list_i, sd_list** n1_list_i, int* p1_array_f, int* n1_array_f, wfnData* wd, eigen_list* transition, double* density, int* jz_shell) {
-  printf("Calling 22\n");
+  
   for (int imjp = 0; imjp < num_mj_p_i; imjp++) {
     float mjp = imjp + mj_min_p_i;
     if (mjp + jz_shell[a]/2.0 - jz_shell[b]/2.0 > mj_max_p_f || mjp + jz_shell[a]/2.0 - jz_shell[b]/2.0 < mj_min_p_f) {continue;}
@@ -1429,7 +1414,7 @@ void trace_two_body_nodes_dmt0_22(int a, int b, int c, int d, int num_mj_p_i, fl
           int phase1 = node_pi->phase;
           int phase2 = 1;
           int ppf = p1_array_f[(ppn - 1) + n_sds_p_int1*a]; // Get pf such that pn = p_a |p_f>
-          if (ppf == 0) {node_pi = node_pi->next; printf("Bad p node: %d\n", ppn); continue;}
+          if (ppf == 0) {node_pi = node_pi->next; continue;}
           if (ppf < 0) {
             ppf *= -1;
             phase2 = -1;
@@ -1459,7 +1444,7 @@ void trace_two_body_nodes_dmt0_22(int a, int b, int c, int d, int num_mj_p_i, fl
               }
               node3 = node3->next;
             }
-            if (index_i < 0) {node_ni = node_ni->next; printf("Not found\n"); continue;}
+            if (index_i < 0) {node_ni = node_ni->next; continue;}
             node3 = wd->wh_hash_f[p_hash_f];
             while (node3 != NULL) {
               if ((pnf == node3->pn) && (ppf == node3->pp)) {
@@ -1468,7 +1453,7 @@ void trace_two_body_nodes_dmt0_22(int a, int b, int c, int d, int num_mj_p_i, fl
               }
               node3 = node3->next;
             }
-            if (index_f < 0) {node_ni = node_ni->next; printf("Not found\n"); continue;}
+            if (index_f < 0) {node_ni = node_ni->next; continue;}
             eigen_list* eig_pair = transition;
             int i_trans = 0;
             while (eig_pair != NULL) {
@@ -1908,7 +1893,6 @@ void build_two_body_jumps_dmtp1_trunc(int n_s, int n_proton_i, int num_mj_p_i, f
       }
     }
   }
-  printf("Done\n");
 
   return;
 }
@@ -2022,7 +2006,6 @@ void build_two_body_jumps_dmtp1(int n_s, int n_proton_i, int num_mj_p_i, float m
       }
     }
   }
-  printf("Done\n");
 
   return;
 }
@@ -2437,6 +2420,413 @@ int test_suite() {
   if (!test_n_choose_k()) {pass = 0;}
   if (!test_slater_routines()) {pass = 0;}
 
+  if (pass == 0) {printf("Error. One of more unit test failed.\n"); exit(0);}
+
+  speedParams* sp = read_parameter_file("../examples/param_files/ne20_ne20_1body_test.param");
+  one_body_density(sp);
+
+  FILE *in_file;
+  in_file = fopen("../examples/output/ne20_ne20_1body_0_0.dens", "r");
+  int Ji, Ti, Jf, Tf, Jop, Top;
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  double mat = 0;
+  int na, ja, nb, jb;
+  float dm;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("Ne20 ground state 1-body J=0 T=0 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+
+  in_file = fopen("../examples/output/ne20_ne20_1body_1_1.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("Ne20 1st excited state 1-body J=0 T=0 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  in_file = fopen("../examples/output/ne20_ne20_1body_2_2.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("Ne20 2nd excited state 1-body J=0 T=0 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  sp = read_parameter_file("../examples/param_files/ne20_ne20_2body_test.param");
+  two_body_density(sp);
+  
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/ne20_ne20_2body_J0_T0_0_0.dens");
+
+  if (fabs(mat - 6) < pow(10, -4)) {printf("Ne20 ground state 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/ne20_ne20_2body_J0_T0_1_1.dens")/sqrt(5.0);
+
+  if (fabs(mat - 6) < pow(10, -4)) {printf("Ne20 1st excited state 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/ne20_ne20_2body_J0_T0_2_2.dens")/sqrt(9.0);
+
+  if (fabs(mat - 6) < pow(10, -4)) {printf("Ne20 2nd excited state 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  free(sp);
+
+// Begin F20 -> F20 tests
+
+  sp = read_parameter_file("../examples/param_files/f20_f20_1body_test.param");
+  one_body_density(sp);
+
+  in_file = fopen("../examples/output/f20_f20_1body_0_0.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("F20 ground state 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(-1.0/sqrt(2.0));
+  if (fabs(mat + 2) > pow(10, -4)) {pass = 0;} else {
+  printf("F20 ground state 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+
+  in_file = fopen("../examples/output/f20_f20_1body_1_1.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("F20 1st excited state 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(-1.0/sqrt(2.0));
+  if (fabs(mat + 2) > pow(10, -4)) {pass = 0;} else {
+  printf("F20 1st excited state 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  in_file = fopen("../examples/output/f20_f20_1body_2_2.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("F20 2nd excited state 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(-1.0/sqrt(2.0));
+  if (fabs(mat + 2) > pow(10, -4)) {pass = 0;} else {
+  printf("F20 2nd excited state 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  sp = read_parameter_file("../examples/param_files/f20_f20_2body_test_T0.param");
+  two_body_density(sp);
+  
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/f20_f20_2body_J0_T0_0_0.dens");
+
+  if (fabs(mat - 6) < pow(10, -4)) {printf("F20 ground state 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/f20_f20_2body_J0_T0_1_1.dens")/sqrt(5.0);
+
+  if (fabs(mat - 6) < pow(10, -4)) {printf("F20 1st excited state 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/f20_f20_2body_J0_T0_2_2.dens")/sqrt(9.0);
+
+  if (fabs(mat - 6) < pow(10, -4)) {printf("F20 2nd excited state 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  free(sp);
+
+  sp = read_parameter_file("../examples/param_files/f20_f20_2body_test_T1.param");
+  two_body_density(sp);
+  
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/f20_f20_2body_J0_T1_0_0.dens")*(-1.0/sqrt(30.0));
+
+  if (fabs(mat + 6) < pow(10, -4)) {printf("F20 ground state 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/f20_f20_2body_J0_T1_1_1.dens")*(-1.0/sqrt(42.0));
+
+  if (fabs(mat + 6) < pow(10, -4)) {printf("F20 1st excited state 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/f20_f20_2body_J0_T1_2_2.dens")*(-1.0/(3*sqrt(6.0)));
+
+  if (fabs(mat + 6) < pow(10, -4)) {printf("F20 2nd excited state 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  free(sp);
+
+// Begin O20 -> O20 tests
+
+  sp = read_parameter_file("../examples/param_files/o20_o20_1body_test.param");
+  one_body_density(sp);
+
+  in_file = fopen("../examples/output/o20_o20_1body_0_0.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("O20 ground state 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(-1.0/sqrt(2.0));
+  if (fabs(mat + 2) > pow(10, -4)) {pass = 0;} else {
+  printf("O20 ground state 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+
+  in_file = fopen("../examples/output/o20_o20_1body_1_1.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("O20 1st excited state 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(-1.0/sqrt(2.0));
+  if (fabs(mat + 2) > pow(10, -4)) {pass = 0;} else {
+  printf("O20 1st excited state 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  in_file = fopen("../examples/output/o20_o20_1body_2_2.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("O20 2nd excited state 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(-1.0/sqrt(2.0));
+  if (fabs(mat + 2) > pow(10, -4)) {pass = 0;} else {
+  printf("O20 2nd excited state 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  sp = read_parameter_file("../examples/param_files/o20_o20_2body_test_T0.param");
+  two_body_density(sp);
+  
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/o20_o20_2body_J0_T0_0_0.dens");
+
+  if (fabs(mat - 6) < pow(10, -4)) {printf("O20 ground state 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/o20_o20_2body_J0_T0_1_1.dens")/sqrt(5.0);
+
+  if (fabs(mat - 6) < pow(10, -4)) {printf("O20 1st excited state 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/o20_o20_2body_J0_T0_2_2.dens")/sqrt(9.0);
+
+  if (fabs(mat - 6) < pow(10, -4)) {printf("O20 2nd excited state 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  free(sp);
+
+  sp = read_parameter_file("../examples/param_files/o20_o20_2body_test_T1.param");
+  two_body_density(sp);
+  
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/o20_o20_2body_J0_T1_0_0.dens")*(-sqrt(2.0/15.0));
+
+  if (fabs(mat + 12) < pow(10, -4)) {printf("O20 ground state 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/o20_o20_2body_J0_T1_1_1.dens")*(-sqrt(2.0/3.0)/5.0);
+
+  if (fabs(mat + 12) < pow(10, -4)) {printf("O20 1st excited state 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/o20_o20_2body_J0_T1_2_2.dens")*(-sqrt(2.0/15.0)/3.0);
+
+  if (fabs(mat + 12) < pow(10, -4)) {printf("O20 2nd excited state 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  free(sp);
+
+  // Begin F20 -> Ne20 Tests
+
+  sp = read_parameter_file("../examples/param_files/f20_ne20_1body_test.param");
+  one_body_density(sp);
+  
+  in_file = fopen("../examples/output/f20_ne20_1body_0_1.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat) > pow(10, -4)) {pass = 0;} else {
+  printf("F20 gs -> Ne20 1st excited state 1-body J=0 T=1 sum rule: Pass\n");}
+
+  in_file = fopen("../examples/output/f20_ne20_1body_2_2.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat) > pow(10, -4)) {pass = 0;} else {
+  printf("F20 2nd excited state -> Ne20 2nd excited state 1-body J=0 T=1 sum rule: Pass\n");}
+
+
   return pass;
 }
 
+double compute_2body_J0_T0_sum_rule(char *input_file) {
+  FILE *in_file;
+  in_file = fopen(input_file, "r");
+
+  double mat = 0;
+  float dm;
+  int in1p, ij1p, in2p, ij2p, ij12p, it12p, in1, ij1, in2, ij2, ij12, it12;
+  while(fscanf(in_file, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f\n", &in1p, &ij1p, &in2p, &ij2p, &ij12p, &it12p, &in1, &ij1, &in2, &ij2, &ij12, &it12, &dm) == 13) {
+    // The angular momentum are doubled in the file
+    double j1 = ij1/2.0;
+    double j2 = ij2/2.0;
+    double j12 = ij12/2.0;
+    double t12 = it12/2.0;
+    double j1p = ij1p/2.0;
+    double j2p = ij2p/2.0;
+    double j12p = ij12p/2.0;
+    double t12p = it12p/2.0;
+    double m4 = 0.0;
+    if (t12 != t12p) {continue;}
+    if (j12 != j12p) {continue;}
+    if ((in1 == in1p) && (j1 == j1p) && (in2 == in2p) && (j2 == j2p)) {
+      m4 = 1.0;
+    }
+   
+    if ((in1 == in2p) && (j1 == j2p) && (in2 == in1p) && (j2 == j1p)) {
+      m4 += pow(-1.0, j1 + j2 + j12 + t12);
+    }
+    if (m4 == 0) {continue;}
+    if ((in1 == in2) && (j1 == j2)) {m4 *= 1.0/sqrt(2.0);}
+    if ((in1p == in2p) && (j1p == j2p)) {m4 *= 1.0/sqrt(2.0);}
+    m4 *= sqrt(2.0*j12p + 1.0)*sqrt(2*t12 + 1);
+    mat += m4*dm;
+  }
+  fclose(in_file);
+
+  
+
+  return mat;
+}
+
+double compute_2body_J0_T1_sum_rule(char *input_file) {
+  FILE *in_file;
+  in_file = fopen(input_file, "r");
+
+  double mat = 0;
+  float dm;
+  int in1p, ij1p, in2p, ij2p, ij12p, it12p, in1, ij1, in2, ij2, ij12, it12;
+  while(fscanf(in_file, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f\n", &in1p, &ij1p, &in2p, &ij2p, &ij12p, &it12p, &in1, &ij1, &in2, &ij2, &ij12, &it12, &dm) == 13) {
+    // The angular momentum are doubled in the file
+    double j1 = ij1/2.0;
+    double j2 = ij2/2.0;
+    double j12 = ij12/2.0;
+    double t12 = it12/2.0;
+    double j1p = ij1p/2.0;
+    double j2p = ij2p/2.0;
+    double j12p = ij12p/2.0;
+    double t12p = it12p/2.0;
+    double m4 = 0.0;
+    if (t12 != t12p) {continue;}
+    if (j12 != j12p) {continue;}
+    if (t12 != 1) {continue;}
+    if ((in1 == in1p) && (j1 == j1p) && (in2 == in2p) && (j2 == j2p)) {
+      m4 = 1.0;
+    }
+   
+    if ((in1 == in2p) && (j1 == j2p) && (in2 == in1p) && (j2 == j1p)) {
+      m4 += pow(-1.0, j1 + j2 + j12 + t12);
+    }
+    if (m4 == 0) {continue;}
+    if ((in1 == in2) && (j1 == j2)) {m4 *= 1.0/sqrt(2.0);}
+    if ((in1p == in2p) && (j1p == j2p)) {m4 *= 1.0/sqrt(2.0);}
+    m4 *= sqrt(2.0*j12p + 1.0)*2.0*sqrt(6.0);
+    mat += m4*dm;
+  }
+  fclose(in_file);
+
+  
+
+  return mat;
+}

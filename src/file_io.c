@@ -1,5 +1,7 @@
 #include "file_io.h"
 
+int VERBOSE = I_VERBOSE;
+
 speedParams* read_parameter_file(char *param_file) {
   FILE *in_file;
   speedParams *sp = malloc(sizeof(*sp));
@@ -15,6 +17,7 @@ speedParams* read_parameter_file(char *param_file) {
   if ((sp->n_body != 1) && (sp->n_body != 2)) {printf("Incorrect request for %d body operator, please type only 1 or 2 here.\n", sp->n_body); exit(0);}
   int eig_i, eig_f;
   sp->n_trans = 0;
+  sp->transition_list = NULL;
   while (fscanf(in_file, "%d,%d\n", &eig_i, &eig_f) == 2) {
     (sp->n_trans)++;
     if (sp->transition_list == NULL) {
@@ -23,7 +26,7 @@ speedParams* read_parameter_file(char *param_file) {
       eigen_append(sp->transition_list, eig_i, eig_f);
     }
   }
-  printf("Read in %d transitions\n", sp->n_trans);
+  if (VERBOSE) {printf("Read in %d transitions\n", sp->n_trans);}
   return sp;
 }
 
@@ -31,8 +34,8 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   wfnData *wd = malloc(sizeof(*wd));
   FILE *in_file;
   // Read in initial wavefunction data
-  printf("\n");
-  printf("Opening initial state wfn file\n");
+  if (VERBOSE) {printf("\n");
+  printf("Opening initial state wfn file\n");}
   in_file = fopen(wfn_file_initial, "rb");
   int junk;
   fread(&junk, sizeof(int), 1, in_file);
@@ -48,7 +51,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   fread(&wd->n_proton_i, sizeof(int), 1, in_file);
   fread(&wd->n_neutron_i, sizeof(int), 1, in_file);
   wd->n_data = wd->n_proton_i + wd->n_neutron_i;
-  printf("Initial state contains %d protons and %d neutrons\n", wd->n_proton_i, wd->n_neutron_i);
+  if (VERBOSE) {printf("Initial state contains %d protons and %d neutrons\n", wd->n_proton_i, wd->n_neutron_i);}
 
   fread(&junk, sizeof(int), 1, in_file);
 //  fread(&junk, sizeof(int), 1, in_file);
@@ -56,7 +59,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   fread(&n_proton_orbs, sizeof(int), 1, in_file);
   fread(&n_neutron_orbs, sizeof(int), 1, in_file);
   wd->n_orbits = n_proton_orbs;
-  printf("Model space contains %d orbitals\n", n_neutron_orbs);
+  if (VERBOSE) {printf("Model space contains %d orbitals\n", n_neutron_orbs);}
   wd->n_orb = (int*) malloc(sizeof(int)*wd->n_orbits);
   wd->l_orb = (int*) malloc(sizeof(int)*wd->n_orbits);
   wd->w_orb = (int*) malloc(sizeof(int)*wd->n_orbits);
@@ -82,7 +85,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   fread(&n_sps_p, sizeof(int), 1, in_file);
   fread(&n_sps_n, sizeof(int), 1, in_file);
   wd->n_shells = n_sps_p;
-  printf("Number of single particle states: %d\n", wd->n_shells);
+  if (VERBOSE) {printf("Number of single particle states: %d\n", wd->n_shells);}
   wd->n_shell = (int*) malloc(sizeof(int)*wd->n_shells);
   wd->j_shell = (int*) malloc(sizeof(int)*wd->n_shells);
   wd->l_shell = (int*) malloc(sizeof(int)*wd->n_shells);
@@ -90,7 +93,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   wd->w_shell = (int*) malloc(sizeof(int)*wd->n_shells);
   wd->n_sds_p_i = get_num_sds(wd->n_shells, wd->n_proton_i);
   wd->n_sds_n_i = get_num_sds(wd->n_shells, wd->n_neutron_i);
-  printf("Initial proton SDs: %d Initial neutron SDs: %d\n", wd->n_sds_p_i, wd->n_sds_n_i);
+  if (VERBOSE) {printf("Initial proton SDs: %d Initial neutron SDs: %d\n", wd->n_sds_p_i, wd->n_sds_n_i);}
   for (int i = 0; i < n_sps_p; i++) {
     int n_shell, l_shell, j_shell, jz_shell, w_shell, pi_shell, id_shell, gid_shell;
     fread(&n_shell, sizeof(int), 1, in_file);
@@ -123,15 +126,17 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   fread(&junk, sizeof(int), 1, in_file);
   fread(&junk, sizeof(int), 1, in_file);
   fread(&wd->n_states_i, sizeof(long long int), 1, in_file);
-  printf("The model space has %d shells for a total basis size of %d\n", wd->n_shells, wd->n_states_i);
+  if (VERBOSE) {printf("The model space has %d shells for a total basis size of %d\n", wd->n_shells, wd->n_states_i);}
   fread(&wd->n_eig_i, sizeof(int), 1, in_file);
-  printf("Initial state file contains %d eigenstates\n", wd->n_eig_i);
-  if (wd->parity_i == '+') {printf("The initial state basis is positive parity\n");} 
-  else if (wd->parity_i == '-') {printf("The initial state basis is negative parity\n");} 
-  else if (wd->parity_i == '0') {printf("The initial state basis contains both positive and negative parity states\n");} 
+  if (VERBOSE) {printf("Initial state file contains %d eigenstates\n", wd->n_eig_i);}
+  if (wd->parity_i == '+') {if (VERBOSE) {printf("The initial state basis is positive parity\n");}} 
+  else if (wd->parity_i == '-') {if (VERBOSE) {printf("The initial state basis is negative parity\n");}} 
+  else if (wd->parity_i == '0') {if (VERBOSE) {printf("The initial state basis contains both positive and negative parity states\n");}} 
   else {printf("Error in initial state parity: %c\n", wd->parity_i); exit(0);}
   if (wd->w_max_i > 0) {
-    printf("The max initial state excitation is w_max = %d\n", wd->w_max_i);
+    if (VERBOSE) {
+      printf("The max initial state excitation is w_max = %d\n", wd->w_max_i);
+    }
   } else if (wd->w_max_i < 0) {
     printf("Error: Max excitation w_max < 0. Please define a truncation scheme where w_max is positive\n"); 
     exit(0);
@@ -142,7 +147,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   wd->t_nuc_i =  (float*) malloc(sizeof(float)*wd->n_eig_i);
   wd->bc_i = malloc(sizeof(float)*wd->n_states_i*wd->n_eig_i);
 
-  printf("Reading in initial state wavefunction coefficients\n");
+  if (VERBOSE) {printf("Reading in initial state wavefunction coefficients\n");}
   for (int i = 0; i < wd->n_eig_i; i++) {
     fread(&junk, sizeof(int), 1, in_file);
     int vec_index;
@@ -160,13 +165,12 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
     for (int j = 0; j < wd->n_states_i; j++) {
       fread(&wd->bc_i[i + wd->n_eig_i*j], sizeof(float), 1, in_file);
       total += pow(wd->bc_i[i + wd->n_eig_i*j], 2);
- //     if ((i == 0) && j < 10) {printf("%g\n", wd->bc_i[i + wd->n_eig_i*j]);}
     }
     if (fabs(total -1.0) > pow(10, -6)) {printf("State %d not normalized: norm = %g\n", i, total); exit(0);}
   }
   fclose(in_file);
-  printf("Done.\n");
-  printf("Reading in initial state basis\n");
+  if (VERBOSE) {printf("Done.\n");
+  printf("Reading in initial state basis\n");}
   in_file = fopen(basis_file_initial, "rb");
   fread(&junk, sizeof(int), 1, in_file);
   fread(&junk, sizeof(int), 1, in_file);
@@ -174,14 +178,12 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   fread(&vec_offset, sizeof(int), 1, in_file);
   fseek(in_file, vec_offset + 16, SEEK_SET);
   for (int i = 0; i < wd->n_shells; i++) {
-  //  int w_shell;
     fread(&junk, sizeof(int), 1, in_file);
     fread(&wd->n_shell[i], sizeof(int), 1, in_file);
     fread(&wd->l_shell[i], sizeof(int), 1, in_file);
     fread(&wd->j_shell[i], sizeof(int), 1, in_file);
     fread(&wd->jz_shell[i], sizeof(int), 1, in_file);
     fread(&wd->w_shell[i], sizeof(int), 1, in_file);
- //   printf("%d, %d, %d, %d, %d\n", i+1, wd->n_shell[i], wd->l_shell[i], wd->j_shell[i], wd->jz_shell[i]);
   }
   for (int i = 0; i < wd->n_shells; i++) {
     int n_shell, j_shell, l_shell, jz_shell, w_shell;
@@ -220,11 +222,11 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
       wh_append(wd->wh_hash_i[p_hash], pp, pn, i);
     }
   }
-  printf("Done.\n");
+  if (VERBOSE) {printf("Done.\n");}
   fclose(in_file);
-  printf("\n");
+  if (VERBOSE) {printf("\n");}
   if (strcmp(wfn_file_initial, wfn_file_final) == 0) {
-    printf("Initial and final bases are identical.\n");
+    if (VERBOSE) {printf("Initial and final bases are identical.\n");}
     wd->same_basis = 1;
     wd->n_proton_f = wd->n_proton_i;
     wd->n_neutron_f = wd->n_neutron_i;
@@ -242,7 +244,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
     wd->bc_f = wd->bc_i;
     wd->wh_hash_f = wd->wh_hash_i;
   } else {
-    printf("Initial and final bases are different.\n");
+    if (VERBOSE) {printf("Initial and final bases are different.\n");}
     wd->same_basis = 0;
     in_file = fopen(wfn_file_final, "rb");
     fread(&junk, sizeof(int), 1, in_file);
@@ -255,10 +257,10 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
     fread(&junk, sizeof(int), 1, in_file);
     fread(&wd->n_proton_f, sizeof(int), 1, in_file);
     fread(&wd->n_neutron_f, sizeof(int), 1, in_file);
-    printf("Final state contains %d protons and %d neutrons\n", wd->n_proton_f, wd->n_neutron_f);
+    if (VERBOSE) {printf("Final state contains %d protons and %d neutrons\n", wd->n_proton_f, wd->n_neutron_f);}
     wd->n_sds_p_f = get_num_sds(wd->n_shells, wd->n_proton_f);
     wd->n_sds_n_f = get_num_sds(wd->n_shells, wd->n_neutron_f);
-    printf("Final proton SDs: %d Final neutron SDs: %d\n", wd->n_sds_p_f, wd->n_sds_n_f);
+    if (VERBOSE) {printf("Final proton SDs: %d Final neutron SDs: %d\n", wd->n_sds_p_f, wd->n_sds_n_f);}
     fread(&junk, sizeof(int), 1, in_file);
     fread(&n_proton_orbs, sizeof(int), 1, in_file);
     fread(&n_neutron_orbs, sizeof(int), 1, in_file);
@@ -313,16 +315,16 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
     fread(&junk, sizeof(int), 1, in_file);
     fread(&junk, sizeof(int), 1, in_file);
     fread(&wd->n_states_f, sizeof(long long int), 1, in_file);
-    printf("The model space has %d shells for a total basis size of %d\n", wd->n_shells, wd->n_states_f);
+    if (VERBOSE) {printf("The model space has %d shells for a total basis size of %d\n", wd->n_shells, wd->n_states_f);}
     fread(&wd->n_eig_f, sizeof(int), 1, in_file);
-    printf("Final state file contains %d eigenstates\n", wd->n_eig_f);
+    if (VERBOSE) {printf("Final state file contains %d eigenstates\n", wd->n_eig_f);}
  
-    if (wd->parity_f == '+') {printf("The final state basis is positive parity\n");} 
-    else if (wd->parity_f == '-') {printf("The final state basis is negative parity\n");} 
-    else if (wd->parity_f == '0') {printf("The final state basis contains both positive and negative parity states\n");} 
+    if (wd->parity_f == '+') {if (VERBOSE) {printf("The final state basis is positive parity\n");}} 
+    else if (wd->parity_f == '-') {if (VERBOSE) {printf("The final state basis is negative parity\n");}} 
+    else if (wd->parity_f == '0') {if (VERBOSE) {printf("The final state basis contains both positive and negative parity states\n");}} 
     else {printf("Error in final state parity: %c\n", wd->parity_f); exit(0);}
     if (wd->w_max_f > 0) {
-      printf("The max final state excitation is w_max = %d\n", wd->w_max_f);
+      if (VERBOSE) {printf("The max final state excitation is w_max = %d\n", wd->w_max_f);}
     } else if (wd->w_max_f < 0) {
       printf("Error: Max excitation w_max < 0. Please define a truncation scheme where w_max > 0.\n");
       exit(0);
@@ -333,7 +335,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
     wd->t_nuc_f = (float*) malloc(sizeof(float)*wd->n_eig_f);
     wd->bc_f = malloc(sizeof(float)*wd->n_states_f*wd->n_eig_f);
 
-    printf("Reading in final state wavefunction coefficients\n");
+    if (VERBOSE) {printf("Reading in final state wavefunction coefficients\n");}
     for (int i = 0; i < wd->n_eig_f; i++) {
       fread(&junk, sizeof(int), 1, in_file);
       int vec_index;
@@ -355,8 +357,8 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
       if (fabs(total - 1.0) > pow(10, -6)) {printf("State %d is not normalized: norm = %g\n", i, total); exit(0);}
     }
     fclose(in_file);
-    printf("Done.\n");
-    printf("Reading in final state basis\n");
+    if (VERBOSE) {printf("Done.\n");
+    printf("Reading in final state basis\n");}
     in_file = fopen(basis_file_final, "rb");
     fread(&junk, sizeof(int), 1, in_file);
     fread(&junk, sizeof(int), 1, in_file);
@@ -400,7 +402,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
         wh_append(wd->wh_hash_f[p_hash], pp, pn, i);
       }
     }
-    printf("Done.\n");
+    if (VERBOSE) {printf("Done.\n");}
     fclose(in_file);
 
   }
