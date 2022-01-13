@@ -43,7 +43,7 @@ void two_body_density(speedParams *sp) {
   unsigned int n_sds_n_int1 = get_num_sds(wd->n_shells, wd->n_neutron_f - 1);
   unsigned int n_sds_n_int2 = get_num_sds(wd->n_shells, wd->n_neutron_f - 2);
 
-  //printf("Intermediate SDs: p1: %d n1: %d, p2: %d, n2: %d\n", n_sds_p_int1, n_sds_n_int1, n_sds_p_int2, n_sds_n_int2);
+  if (VERBOSE) {printf("Intermediate SDs: p1: %d n1: %d, p2: %d, n2: %d\n", n_sds_p_int1, n_sds_n_int1, n_sds_p_int2, n_sds_n_int2);}
 
   // Determine the min and max mj values of proton/neutron SDs
   float mj_min_p_i = min_mj(ns, wd->n_proton_i, wd->jz_shell);
@@ -99,6 +99,16 @@ if (VERBOSE) {
 
   printf("Number of final proton sectors:  %d\n", num_mj_p_f);
   printf("Number of final neutron sectors: %d\n", num_mj_n_f);
+
+  printf("mj_min_p_i: %g\n", mj_min_p_i);
+  printf("mj_max_p_i: %g\n", mj_max_p_i);
+  printf("mj_min_p_f: %g\n", mj_min_p_i);
+  printf("mj_max_p_f: %g\n", mj_max_p_f);
+  printf("mj_min_n_i: %g\n", mj_min_n_i);
+  printf("mj_max_n_i: %g\n", mj_max_n_i);
+  printf("mj_min_n_f: %g\n", mj_min_n_f);
+  printf("mj_max_n_f: %g\n", mj_max_n_f);
+
 }
 
   // Allocate space for jump lists
@@ -1304,8 +1314,8 @@ void trace_two_body_nodes_dmtp2(int a, int b, int c, int d, int num_mj_p_i, floa
 }
 
 void trace_two_body_nodes_dmt0_22_alt(int a, int b, int c, int d, int num_mj_p_i, float mj_min_p_i, float mj_min_p_f, float mj_max_p_f, int num_mj_n_i, float mj_min_n_i, float mj_min_n_f, float mj_max_n_f, sd_list** p2_list_if, sd_list** n2_list_if, wfnData* wd, eigen_list* transition, double* density, int* jz_shell) {
-  
-	int ns = wd->n_shells;
+ 
+  int ns = wd->n_shells;
   for (int imjp = 0; imjp < num_mj_p_i; imjp++) {
     float mjp = imjp + mj_min_p_i;
     if (mjp + jz_shell[a]/2.0 - jz_shell[b]/2.0 > mj_max_p_f || mjp + jz_shell[a]/2.0 - jz_shell[b]/2.0 < mj_min_p_f) {continue;}
@@ -1495,7 +1505,6 @@ void build_two_body_jumps_dmt0_alt(int n_s, int n_p, float mj_min, float mj_max,
       int phase1;
       int pn1 = a_op(n_s, n_p, j, b + 1, &phase1, j_min);
       if (pn1 == 0) {continue;}
-      
       for (int a = j_min - 1; a < b; a++) {
         int phase2;
         int pn2 = a_op(n_s, n_p - 1, pn1, a + 1, &phase2, j_min);
@@ -1515,7 +1524,7 @@ void build_two_body_jumps_dmt0_alt(int n_s, int n_p, float mj_min, float mj_max,
       }
       for (int a = 0; a < n_s; a++) {
         int phase2;
-        int pn2 = a_op_dag(n_s, n_p - 1, pn1, a + 1, &phase2, j_min);
+        int pn2 = a_op_dag(n_s, n_p - 1, pn1, a + 1, &phase2, 1);
         if (pn2 == 0) {continue;}
         float mj = m_from_p(pn2, n_s, n_p, jz_shell);
         if ((mj < mj_min) || (mj > mj_max)) {continue;}
@@ -2491,6 +2500,121 @@ int test_suite() {
   printf("\n");
   free(sp);
 
+  // Begin Na20 -> Na20 tests
+
+  sp = read_parameter_file("../examples/param_files/na20_na20_1body_test.param");
+  one_body_density(sp);
+
+  in_file = fopen("../examples/output/na20_na20_1body_0_0.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("Na20 state #1 -> Na20 state #1: 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(1.0/sqrt(2.0));
+  if (fabs(mat - 2) > pow(10, -4)) {pass = 0;} else {
+  printf("Na20 state #1 -> Na20 state #1: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  in_file = fopen("../examples/output/na20_na20_1body_1_1.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("Na20 state #2 -> Na20 state #2: 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(1.0/sqrt(2.0));
+  if (fabs(mat - 2) > pow(10, -4)) {pass = 0;} else {
+  printf("Na20 state #2 -> Na20 state #2: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  in_file = fopen("../examples/output/na20_na20_1body_2_2.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("Na20 state #3 -> Na20 state #3: 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(1.0/sqrt(2.0));
+  if (fabs(mat - 2) > pow(10, -4)) {pass = 0;} else {
+  printf("Na20 state #3 -> Na20 state #3: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  printf("\n");
+
+  sp = read_parameter_file("../examples/param_files/na20_na20_2body_test_T0.param");
+  two_body_density(sp);
+  
+
+  free(sp);
+
+  sp = read_parameter_file("../examples/param_files/na20_na20_2body_test_T1.param");
+  two_body_density(sp);
+  
+  free(sp);
+
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/na20_na20_2body_J0_T0_0_0.dens")/sqrt(15.0);
+  if (fabs(mat - 6) < pow(10, -4)) {printf("Na20 state #1 -> Na20 state #1: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/na20_na20_2body_J0_T1_0_0.dens")*(1.0/sqrt(30.0));
+  if (fabs(mat - 6) < pow(10, -4)) {printf("Na20 state #1 -> Na20 state #1: 2-body J=0 T=1 Sum Rule: Pass\n");}
+  
+  
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/na20_na20_2body_J0_T0_1_1.dens")/sqrt(21.0);
+  if (fabs(mat - 6) < pow(10, -4)) {printf("Na20 state #2 -> Na20 state #2: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/na20_na20_2body_J0_T1_1_1.dens")*(1.0/sqrt(42.0));
+  if (fabs(mat - 6) < pow(10, -4)) {printf("Na20 state #2 -> Na20 state #2: 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/na20_na20_2body_J0_T0_2_2.dens")/(3.0*sqrt(3.0));
+  if (fabs(mat - 6) < pow(10, -4)) {printf("Na20 state #3 -> Na20 state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/na20_na20_2body_J0_T1_2_2.dens")*(1.0/(3*sqrt(6.0)));
+  if (fabs(mat - 6) < pow(10, -4)) {printf("Na20 state #3 -> Na20 state #3: 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  printf("\n");
+
+
 // Begin F20 -> F20 tests
 
   sp = read_parameter_file("../examples/param_files/f20_f20_1body_test.param");
@@ -2575,43 +2699,143 @@ int test_suite() {
   printf("\n");
 
   sp = read_parameter_file("../examples/param_files/f20_f20_2body_test_T0.param");
-  VERBOSE = 1;
   two_body_density(sp);
-  VERBOSE = 0;
-  mat = compute_2body_J0_T0_sum_rule("../examples/output/f20_f20_2body_J0_T0_0_0.dens")/sqrt(15.0);
-  printf("Mat: %g\n");
-  if (fabs(mat - 6) < pow(10, -4)) {printf("F20  state #1 -> F20  state #1: 2-body J=0 T=0 Sum Rule: Pass\n");}
-
-  mat = compute_2body_J0_T0_sum_rule("../examples/output/f20_f20_2body_J0_T0_1_1.dens")/sqrt(5.0);
-  printf("Mat: %g\n");
-
-  if (fabs(mat - 6) < pow(10, -4)) {printf("F20  state #2 -> F20  state #2: 2-body J=0 T=0 Sum Rule: Pass\n");}
-
-  mat = compute_2body_J0_T0_sum_rule("../examples/output/f20_f20_2body_J0_T0_2_2.dens")/sqrt(9.0);
-  printf("Mat: %g\n");
-
-  if (fabs(mat - 6) < pow(10, -4)) {printf("F20  state #3 -> F20  state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
-
   free(sp);
 
   sp = read_parameter_file("../examples/param_files/f20_f20_2body_test_T1.param");
   two_body_density(sp);
-  
-  mat = compute_2body_J0_T1_sum_rule("../examples/output/f20_f20_2body_J0_T1_0_0.dens")*(-1.0/sqrt(30.0));
+  free(sp);
 
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/f20_f20_2body_J0_T0_0_0.dens")/sqrt(15.0);
+  if (fabs(mat - 6) < pow(10, -4)) {printf("F20  state #1 -> F20  state #1: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/f20_f20_2body_J0_T1_0_0.dens")*(-1.0/sqrt(30.0));
   if (fabs(mat + 6) < pow(10, -4)) {printf("F20  state #1 -> F20  state #1: 2-body J=0 T=1 Sum Rule: Pass\n");}
 
-  mat = compute_2body_J0_T1_sum_rule("../examples/output/f20_f20_2body_J0_T1_1_1.dens")*(-1.0/sqrt(42.0));
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/f20_f20_2body_J0_T0_1_1.dens")/sqrt(21.0);
+  if (fabs(mat - 6) < pow(10, -4)) {printf("F20  state #2 -> F20  state #2: 2-body J=0 T=0 Sum Rule: Pass\n");}
 
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/f20_f20_2body_J0_T1_1_1.dens")*(-1.0/sqrt(42.0));
   if (fabs(mat + 6) < pow(10, -4)) {printf("F20  state #2 -> F20  state #2: 2-body J=0 T=1 Sum Rule: Pass\n");}
 
-  mat = compute_2body_J0_T1_sum_rule("../examples/output/f20_f20_2body_J0_T1_2_2.dens")*(-1.0/(3*sqrt(6.0)));
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/f20_f20_2body_J0_T0_2_2.dens")/(3.0*sqrt(3.0));
+  if (fabs(mat - 6) < pow(10, -4)) {printf("F20  state #3 -> F20  state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
 
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/f20_f20_2body_J0_T1_2_2.dens")*(-1.0/(3*sqrt(6.0)));
   if (fabs(mat + 6) < pow(10, -4)) {printf("F20  state #3 -> F20  state #3: 2-body J=0 T=1 Sum Rule: Pass\n");}
 
-  free(sp);
   printf("\n");
-// Begin O20 -> O20 tests
+
+  // Begin Mg20 -> Mg20 tests
+
+  sp = read_parameter_file("../examples/param_files/mg20_mg20_1body_test.param");
+  one_body_density(sp);
+
+  in_file = fopen("../examples/output/mg20_mg20_1body_0_0.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("Mg20 state #1 -> Mg20 state #1: 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(sqrt(2.0/3.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("Mg20 state #1 -> Mg20 state #1: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  in_file = fopen("../examples/output/mg20_mg20_1body_1_1.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("Mg20 state #2 -> Mg20 state #2: 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(sqrt(2.0/3.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("Mg20 state #2 -> Mg20 state #2: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  in_file = fopen("../examples/output/mg20_mg20_1body_2_2.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("Mg20 state #3 -> Mg20 state #3: 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(sqrt(2.0/3.0));
+  if (fabs(mat - 4) > pow(10, -4)) {pass = 0;} else {
+  printf("Mg20 state #3 -> Mg20 state #3: 1-body J=0 T=1 sum rule: Pass\n");}
+  fclose(in_file);
+  printf("\n");
+
+  sp = read_parameter_file("../examples/param_files/mg20_mg20_2body_test_T0.param");
+  two_body_density(sp);
+  free(sp);
+  
+  sp = read_parameter_file("../examples/param_files/mg20_mg20_2body_test_T1.param");
+  two_body_density(sp);
+  free(sp);
+  
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/mg20_mg20_2body_J0_T0_0_0.dens")/sqrt(5.0);
+  if (fabs(mat - 6) < pow(10, -4)) {printf("Mg20 state #1 -> Mg20 state #1: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/mg20_mg20_2body_J0_T1_0_0.dens")*(sqrt(2.0/15.0));
+  if (fabs(mat - 12) < pow(10, -4)) {printf("Mg20 state #1 -> Mg20 state #1: 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/mg20_mg20_2body_J0_T0_1_1.dens")/5.0;
+  if (fabs(mat - 6) < pow(10, -4)) {printf("Mg20 state #2 -> Mg20 state #2: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/mg20_mg20_2body_J0_T1_1_1.dens")*(sqrt(2.0/3.0)/5.0);
+  if (fabs(mat - 12) < pow(10, -4)) {printf("Mg20 state #2 -> Mg20 state #2: 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/mg20_mg20_2body_J0_T0_2_2.dens")/(3.0*sqrt(5.0));
+  if (fabs(mat - 6) < pow(10, -4)) {printf("Mg20 state #3 -> Mg20 state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/mg20_mg20_2body_J0_T1_2_2.dens")*(sqrt(2.0/15.0)/3.0);
+  if (fabs(mat - 12) < pow(10, -4)) {printf("Mg20 state #3 -> Mg20 state #3: 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  printf("\n");
+
+
+  // Begin O20 -> O20 tests
 
   sp = read_parameter_file("../examples/param_files/o20_o20_1body_test.param");
   one_body_density(sp);
@@ -2691,38 +2915,33 @@ int test_suite() {
   printf("O20  state #3 -> O20  state #3: 1-body J=0 T=1 sum rule: Pass\n");}
   fclose(in_file);
   printf("\n");
+
   sp = read_parameter_file("../examples/param_files/o20_o20_2body_test_T0.param");
   two_body_density(sp);
+  free(sp);
+  
+  sp = read_parameter_file("../examples/param_files/o20_o20_2body_test_T1.param");
+  two_body_density(sp);
+  free(sp);
   
   mat = compute_2body_J0_T0_sum_rule("../examples/output/o20_o20_2body_J0_T0_0_0.dens")/sqrt(5.0);
   if (fabs(mat - 6) < pow(10, -4)) {printf("O20  state #1 -> O20  state #1: 2-body J=0 T=0 Sum Rule: Pass\n");}
 
-  mat = compute_2body_J0_T0_sum_rule("../examples/output/o20_o20_2body_J0_T0_1_1.dens")/5.0;
-
-  if (fabs(mat - 6) < pow(10, -4)) {printf("O20  state #2 -> O20  state #2: 2-body J=0 T=0 Sum Rule: Pass\n");}
-
-  mat = compute_2body_J0_T0_sum_rule("../examples/output/o20_o20_2body_J0_T0_2_2.dens")/(3.0*sqrt(5.0));
-
-  if (fabs(mat - 6) < pow(10, -4)) {printf("O20  state #3 -> O20  state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
-
-  free(sp);
-
-  sp = read_parameter_file("../examples/param_files/o20_o20_2body_test_T1.param");
-  two_body_density(sp);
-  
   mat = compute_2body_J0_T1_sum_rule("../examples/output/o20_o20_2body_J0_T1_0_0.dens")*(-sqrt(2.0/15.0));
-
   if (fabs(mat + 12) < pow(10, -4)) {printf("O20  state #1 -> O20  state #1: 2-body J=0 T=1 Sum Rule: Pass\n");}
 
-  mat = compute_2body_J0_T1_sum_rule("../examples/output/o20_o20_2body_J0_T1_1_1.dens")*(-sqrt(2.0/3.0)/5.0);
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/o20_o20_2body_J0_T0_1_1.dens")/5.0;
+  if (fabs(mat - 6) < pow(10, -4)) {printf("O20  state #2 -> O20  state #2: 2-body J=0 T=0 Sum Rule: Pass\n");}
 
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/o20_o20_2body_J0_T1_1_1.dens")*(-sqrt(2.0/3.0)/5.0);
   if (fabs(mat + 12) < pow(10, -4)) {printf("O20  state #2 -> O20  state #2: 2-body J=0 T=1 Sum Rule: Pass\n");}
 
-  mat = compute_2body_J0_T1_sum_rule("../examples/output/o20_o20_2body_J0_T1_2_2.dens")*(-sqrt(2.0/15.0)/3.0);
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/o20_o20_2body_J0_T0_2_2.dens")/(3.0*sqrt(5.0));
+  if (fabs(mat - 6) < pow(10, -4)) {printf("O20  state #3 -> O20  state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
 
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/o20_o20_2body_J0_T1_2_2.dens")*(-sqrt(2.0/15.0)/3.0);
   if (fabs(mat + 12) < pow(10, -4)) {printf("O20  state #3 -> O20  state #3: 2-body J=0 T=1 Sum Rule: Pass\n");}
 
-  free(sp);
   printf("\n");
 
   // Begin F20 -> Ne20 Tests
@@ -2739,7 +2958,7 @@ int test_suite() {
   }
   mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
   if (fabs(mat) > pow(10, -4)) {pass = 0;} else {
-  printf("F20 gs -> Ne20 1st excited state 1-body J=0 T=1 sum rule: Pass\n");}
+  printf("F20  state #1 -> Ne20 state #2: 1-body J=0 T=1 sum rule: Pass\n");}
   in_file = fopen("../examples/output/f20_ne20_1body_2_2.dens", "r");
   fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
   mat = 0;
@@ -2749,19 +2968,20 @@ int test_suite() {
   }
   mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
   if (fabs(mat) > pow(10, -4)) {pass = 0;} else {
-  printf("F20 2nd excited state -> Ne20 2nd excited state 1-body J=0 T=1 sum rule: Pass\n");}
+  printf("F20  state #3 -> Ne20 state #3: 1-body J=0 T=1 sum rule: Pass\n");}
+  printf("\n");
 
   sp = read_parameter_file("../examples/param_files/f20_ne20_2body_test_T1.param");
   two_body_density(sp);
 
   mat = compute_2body_J0_T1_sum_rule("../examples/output/f20_ne20_2body_J0_T1_0_1.dens")/sqrt(5.0);
 
-  if (fabs(mat) < pow(10, -4)) {printf("F20 ground state -> Ne20 1st excited state 2-body J=0 T=1 Sum Rule: Pass\n");}
+  if (fabs(mat) < pow(10, -4)) {printf("F20  state #1 -> Ne20 state #2: 2-body J=0 T=1 Sum Rule: Pass\n");}
 
   mat = compute_2body_J0_T1_sum_rule("../examples/output/f20_ne20_2body_J0_T1_2_2.dens")/5.0;
 
-  if (fabs(mat) < pow(10, -4)) {printf("F20 2nd excited state -> Ne20 2nd excited state 2-body J=0 T=1 Sum Rule: Pass\n");}
-
+  if (fabs(mat) < pow(10, -4)) {printf("F20  state #3 -> Ne20 state #3: 2-body J=0 T=1 Sum Rule: Pass\n");}
+  printf("\n");
 
   // Begin Ne20 -> F20 Tests
 
@@ -2779,7 +2999,7 @@ int test_suite() {
   }
   mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
   if (fabs(mat) > pow(10, -4)) {pass = 0;} else {
-  printf("Ne20 1st excited state -> F20 ground state 1-body J=0 T=1 sum rule: Pass\n");}
+  printf("Ne20 state #2 -> F20  state #1: 1-body J=0 T=1 sum rule: Pass\n");}
   in_file = fopen("../examples/output/ne20_f20_1body_2_2.dens", "r");
   fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
   mat = 0;
@@ -2789,8 +3009,8 @@ int test_suite() {
   }
   mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
   if (fabs(mat) > pow(10, -4)) {pass = 0;} else {
-  printf("Ne20 2nd excited state -> F20 2nd excited state 1-body J=0 T=1 sum rule: Pass\n");}
-
+  printf("Ne20 state #3 -> F20  state #3: 1-body J=0 T=1 sum rule: Pass\n");}
+  printf("\n");
   // Two-body tests
 
   sp = read_parameter_file("../examples/param_files/ne20_f20_2body_test_T1.param");
@@ -2798,12 +3018,12 @@ int test_suite() {
 
   mat = compute_2body_J0_T1_sum_rule("../examples/output/ne20_f20_2body_J0_T1_1_0.dens")/sqrt(5.0);
 
-  if (fabs(mat) < pow(10, -4)) {printf("Ne20 1st excited state -> F20 ground state 2-body J=0 T=1 Sum Rule: Pass\n");}
+  if (fabs(mat) < pow(10, -4)) {printf("Ne20 state #2 -> F20  state #1: 2-body J=0 T=1 Sum Rule: Pass\n");}
 
   mat = compute_2body_J0_T1_sum_rule("../examples/output/ne20_f20_2body_J0_T1_2_2.dens")/5.0;
 
-  if (fabs(mat) < pow(10, -4)) {printf("Ne20 2nd excited state -> F20 2nd excited state 2-body J=0 T=1 Sum Rule: Pass\n");}
-
+  if (fabs(mat) < pow(10, -4)) {printf("Ne20 state #3 -> F20  state #3: 2-body J=0 T=1 Sum Rule: Pass\n");}
+  printf("\n");
 
   // Begin O20 -> Ne20 Tests
   
@@ -2812,17 +3032,37 @@ int test_suite() {
 
   mat = compute_2body_J0_T2_sum_rule("../examples/output/o20_ne20_2body_J0_T2_0_0.dens")/sqrt(5.0);
 
-  if (fabs(mat) < pow(10, -4)) {printf("O20 ground state -> Ne20 ground state 2-body J=0 T=2 Sum Rule: Pass\n");}
+  if (fabs(mat) < pow(10, -4)) {printf("O20  state #1 -> Ne20 state #1: 2-body J=0 T=2 Sum Rule: Pass\n");}
 
   mat = compute_2body_J0_T2_sum_rule("../examples/output/o20_ne20_2body_J0_T2_1_1.dens")/5.0;
 
-  if (fabs(mat) < pow(10, -4)) {printf("O20 1st excited state -> Ne20 1st excited state 2-body J=0 T=2 Sum Rule: Pass\n");}
+  if (fabs(mat) < pow(10, -4)) {printf("O20  state #2 -> Ne20 state #2: 2-body J=0 T=2 Sum Rule: Pass\n");}
 
   mat = compute_2body_J0_T2_sum_rule("../examples/output/o20_ne20_2body_J0_T2_2_2.dens")/(3.0*sqrt(5.0));
 
-  if (fabs(mat) < pow(10, -4)) {printf("O20 2nd excited state -> Ne20 2nd excited state 2-body J=0 T=0 Sum Rule: Pass\n");}
-
+  if (fabs(mat) < pow(10, -4)) {printf("O20  state #3 -> Ne20 state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
+  printf("\n");
   free(sp);
+
+  // Begin Ne20 -> O20 Tests
+  
+  sp = read_parameter_file("../examples/param_files/ne20_o20_2body_test_T2.param");
+  two_body_density(sp);
+
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/ne20_o20_2body_J0_T2_0_0.dens")/sqrt(5.0);
+
+  if (fabs(mat) < pow(10, -4)) {printf("Ne20 state #1 -> O20  state #1: 2-body J=0 T=2 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/ne20_o20_2body_J0_T2_1_1.dens")/5.0;
+
+  if (fabs(mat) < pow(10, -4)) {printf("Ne20 state #2 -> O20  state #2: 2-body J=0 T=2 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/ne20_o20_2body_J0_T2_2_2.dens")/(3.0*sqrt(5.0));
+
+  if (fabs(mat) < pow(10, -4)) {printf("Ne20 state #3 -> O20  state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
+  printf("\n");
+  free(sp);
+
 
   return pass;
 }
@@ -2862,7 +3102,6 @@ double compute_2body_J0_T0_sum_rule(char *input_file) {
   }
   fclose(in_file);
 
-  
 
   return mat;
 }
@@ -2944,7 +3183,6 @@ double compute_2body_J0_T2_sum_rule(char *input_file) {
   }
   fclose(in_file);
 
-  
 
   return mat;
 }

@@ -181,7 +181,6 @@ int test_slater_routines() {
 
 
 unsigned int a_op_dag(int n_s, int n_p, unsigned int p, int n_op, int *phase, int j_min) {
-  if (n_p == 0) {return 0;}
 /* Acts an annihilation operator on the orbital in position n_op
    Uses a similar algorithm to orbitals_from_p to reconstruct the occupied orbitals from the p-coefficient
 
@@ -227,7 +226,6 @@ unsigned int a_op_dag(int n_s, int n_p, unsigned int p, int n_op, int *phase, in
       kf++;
     }
   }
-
   return pf;
 }
 
