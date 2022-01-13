@@ -358,9 +358,9 @@ if (VERBOSE) {
                       for (int i = 0; i < sp->n_trans; i++) {density[i] *= -1.0;}
                     }
                   } else if (mt_op == 2) {  // p^dag p^dag n n
-                      trace_two_body_nodes_dmtp2(a, b, c, d, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n2_list_i, p2_list_f, wd, 0, sp->transition_list, density);
+                      trace_two_body_nodes_dmtp2(a, b, d, c, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n2_list_i, p2_list_f, wd, 0, sp->transition_list, density);
                   } else if (mt_op == -2) { // n^dag n^dag p p
-                      trace_two_body_nodes_dmtp2(a, b, c, d, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, p2_list_i, n2_list_f, wd, 1, sp->transition_list, density);
+                      trace_two_body_nodes_dmtp2(a, b, d, c, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, p2_list_i, n2_list_f, wd, 1, sp->transition_list, density);
                   } else {printf("Error in mt_op: %d\n", mt_op); exit(0);}
                   //printf("%g %g %g %g %g %g %g %g\n", mj1, mj2, mj3, mj4, mt1, mt2, mt3, mt4); 
                   for (int j12 = j_min_12; j12 <= j_max_12; j12++) {
@@ -605,6 +605,7 @@ void one_body_density(speedParams* sp) {
     if (ijf % 2) {mjf = 0.5; mji = 0.5;}
     for (int j_op = (int) (fabs(jf - ji)); j_op <= (int) (ji + jf); j_op++) { 
       for (int t_op = MAX(0,abs(ti-tf)); t_op <= MIN(1,abs(ti+tf)); t_op++) {
+	if (fabs(mt_op) > t_op) {continue;}
         cg_j = clebsch_gordan(j_op, ji, jf, 0, mji,mjf);
         if (fabs(cg_j) < pow(10, -6)) {if (VERBOSE) {printf("Warning: CG coefficient is zero for allowed transition: Ji = %g Jf = %g Jop = %d \nComputing the density matrix for this operator requires the raising/lowering operators (not currently supported.)\n This entry will be omitted even though there could be non-zero contributions.\n", ji, jf, j_op);} continue;}
         cg_t = clebsch_gordan(t_op, ti, tf, mt_op, mti, mtf);
@@ -619,7 +620,6 @@ void one_body_density(speedParams* sp) {
     }
     trans = trans->next;
   }
-  
   double* cg_fact = (double*) calloc(i_trans, sizeof(double));
   int* j_op_arr = (int*) calloc(i_trans, sizeof(int));
   int* t_op_arr = (int*) calloc(i_trans, sizeof(int));
@@ -647,6 +647,7 @@ void one_body_density(speedParams* sp) {
     if (ijf % 2) {mjf = 0.5; mji = 0.5;}
     for (int j_op = (int) abs(jf - ji); j_op <= (int) (ji + jf); j_op++) {
       for (int t_op = MAX(0,abs(ti-tf)); t_op <= MIN(1,ti+tf); t_op++) {
+	if (fabs(mt_op) > t_op) {continue;}
         cg_j = clebsch_gordan(j_op, ji, jf, 0, mji,mjf);
         if (fabs(cg_j) < pow(10, -6)) {continue;}
         cg_t = clebsch_gordan(t_op, ti, tf, mt_op, mti, mtf);
@@ -702,14 +703,15 @@ void one_body_density(speedParams* sp) {
           for (int i = 0; i < sp->n_trans; i++) {
             density[i] = 0.0;
           }
-          if ((mt1 == 0.5) && (mt2 == 0.5)) {
+          
+	  if ((mt1 == 0.5) && (mt2 == 0.5)) {
             trace_one_body_nodes_dmt0(a, b, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n_sds_p_int, p1_array_f, p1_list_i, n0_list_i, wd, 0, sp->transition_list, density);
           } else if ((mt1 == -0.5) && (mt2 == -0.5)) {
             trace_one_body_nodes_dmt0(a, b, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, n_sds_n_int, n1_array_f, n1_list_i, p0_list_i, wd, 1, sp->transition_list, density);
           } else if ((mt1 == 0.5) && (mt2 == -0.5)) {
-            trace_one_body_nodes_dmtp1(a, b, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, n1_list_i, p1_list_f, wd, 1, sp->transition_list, density);
+            trace_one_body_nodes_dmtp1(a, b, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, n1_list_i, p1_list_f, wd, 0, sp->transition_list, density);
           } else {
-            trace_one_body_nodes_dmtp1(a, b, num_mj_p_i, mj_min_p_i, num_mj_n_i, mj_min_n_i, p1_list_i, n1_list_f, wd, 0, sp->transition_list, density);
+            trace_one_body_nodes_dmtp1(a, b, num_mj_n_i, mj_min_n_i, num_mj_p_i, mj_min_p_i, p1_list_i, n1_list_f, wd, 1, sp->transition_list, density);
           }
           for (int i = 0; i < sp->n_trans; i++) {
             int j_op = j_op_arr[i];
@@ -2059,7 +2061,6 @@ void build_one_body_jumps_dmtp1(int n_s, int n_proton_f, int num_mj_p_i, float m
   unsigned int n_sds_n_i = get_num_sds(n_s, n_neutron_i);
   unsigned int n_sds_p_f = get_num_sds(n_s, n_proton_f);
 
-
   for (int j = 1; j <= n_sds_n_i; j++) {
     float mj = m_from_p(j, n_s, n_neutron_i, jz_shell);
     if ((mj < mj_min_n_i) || (mj > mj_max_n_i)) {continue;}
@@ -2101,7 +2102,6 @@ void build_one_body_jumps_dmtp1(int n_s, int n_proton_f, int num_mj_p_i, float m
       }
     }
   }
-
 
   return;
 }
@@ -2338,16 +2338,16 @@ void trace_one_body_nodes_dmtp1(int a, int b, int num_mj_p_i, float mj_min_p_i, 
         sd_list* node1 = n1_list_i[ipar_n + 2*(imjn + num_mj_n_i*b)];
         // Loop over final states resulting from 2x a_op
         while (node1 != NULL) {
-          unsigned int ppf = node1->pn; // Get final state p_f
-          unsigned int ppi = node1->pi; // Get initial state p_i
+          unsigned int pnf = node1->pn; // Get final state p_f
+          unsigned int pni = node1->pi; // Get initial state p_i
           int phase1 = node1->phase;
           sd_list* node2 = p1_list_f[ipar_p + 2*(imjp + num_mj_p_i*a)]; //hash corresponds to a_op operators
 
         // Loop over n_f  
         //int m_pf = m_from_p(ppf, ns, npp, wd->jz_shell);
         while (node2 != NULL) {
-          unsigned int pni = node2->pi;
-          unsigned int pnf = node2->pn;
+          unsigned int ppi = node2->pi;
+          unsigned int ppf = node2->pn;
           int phase2 = node2->phase;
           int index_i = -1;
           int index_f = -1;  
@@ -2944,6 +2944,88 @@ int test_suite() {
 
   printf("\n");
 
+  // Begin Na20 -> Ne20 Tests
+
+  sp = read_parameter_file("../examples/param_files/na20_ne20_1body_test.param");
+  one_body_density(sp);
+  
+  in_file = fopen("../examples/output/na20_ne20_1body_0_1.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat) > pow(10, -4)) {pass = 0;} else {
+  printf("Na20 state #1 -> Ne20 state #2: 1-body J=0 T=1 sum rule: Pass\n");}
+  in_file = fopen("../examples/output/na20_ne20_1body_2_2.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat) > pow(10, -4)) {pass = 0;} else {
+  printf("Na20 state #3 -> Ne20 state #3: 1-body J=0 T=1 sum rule: Pass\n");}
+  printf("\n");
+
+  sp = read_parameter_file("../examples/param_files/na20_ne20_2body_test_T1.param");
+  two_body_density(sp);
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/na20_ne20_2body_J0_T1_0_1.dens")/sqrt(5.0);
+
+  if (fabs(mat) < pow(10, -4)) {printf("Na20 state #1 -> Ne20 state #2: 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/na20_ne20_2body_J0_T1_2_2.dens")/5.0;
+
+  if (fabs(mat) < pow(10, -4)) {printf("Na20 state #3 -> Ne20 state #3: 2-body J=0 T=1 Sum Rule: Pass\n");}
+  printf("\n");
+
+  // Begin Ne20 -> Na20 Tests
+
+  // One-body tests
+
+  sp = read_parameter_file("../examples/param_files/ne20_na20_1body_test.param");
+  one_body_density(sp);
+  
+  in_file = fopen("../examples/output/ne20_na20_1body_1_0.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat) > pow(10, -4)) {pass = 0;} else {
+  printf("Ne20 state #2 -> Na20 state #1: 1-body J=0 T=1 sum rule: Pass\n");}
+  in_file = fopen("../examples/output/ne20_na20_1body_2_2.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat) > pow(10, -4)) {pass = 0;} else {
+  printf("Ne20 state #3 -> Na20 state #3: 1-body J=0 T=1 sum rule: Pass\n");}
+  printf("\n");
+  // Two-body tests
+
+  sp = read_parameter_file("../examples/param_files/ne20_na20_2body_test_T1.param");
+  two_body_density(sp);
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/ne20_na20_2body_J0_T1_1_0.dens")/sqrt(5.0);
+
+  if (fabs(mat) < pow(10, -4)) {printf("Ne20 state #2 -> Na20 state #1: 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/ne20_na20_2body_J0_T1_2_2.dens")/5.0;
+
+  if (fabs(mat) < pow(10, -4)) {printf("Ne20 state #3 -> Na20 state #3: 2-body J=0 T=1 Sum Rule: Pass\n");}
+  printf("\n");
+
+
   // Begin F20 -> Ne20 Tests
 
   sp = read_parameter_file("../examples/param_files/f20_ne20_1body_test.param");
@@ -3025,6 +3107,45 @@ int test_suite() {
   if (fabs(mat) < pow(10, -4)) {printf("Ne20 state #3 -> F20  state #3: 2-body J=0 T=1 Sum Rule: Pass\n");}
   printf("\n");
 
+  // Begin Mg20 -> Ne20 Tests
+  
+  sp = read_parameter_file("../examples/param_files/mg20_ne20_2body_test_T2.param");
+  two_body_density(sp);
+
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/mg20_ne20_2body_J0_T2_0_0.dens")/sqrt(5.0);
+
+  if (fabs(mat) < pow(10, -4)) {printf("Mg20 state #1 -> Ne20 state #1: 2-body J=0 T=2 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/mg20_ne20_2body_J0_T2_1_1.dens")/5.0;
+
+  if (fabs(mat) < pow(10, -4)) {printf("Mg20 state #2 -> Ne20 state #2: 2-body J=0 T=2 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/mg20_ne20_2body_J0_T2_2_2.dens")/(3.0*sqrt(5.0));
+
+  if (fabs(mat) < pow(10, -4)) {printf("Mg20 state #3 -> Ne20 state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
+  printf("\n");
+  free(sp);
+
+  // Begin Ne20 -> Mg20 Tests
+  
+  sp = read_parameter_file("../examples/param_files/ne20_mg20_2body_test_T2.param");
+  two_body_density(sp);
+
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/ne20_mg20_2body_J0_T2_0_0.dens")/sqrt(5.0);
+
+  if (fabs(mat) < pow(10, -4)) {printf("Ne20 state #1 -> Mg20 state #1: 2-body J=0 T=2 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/ne20_mg20_2body_J0_T2_1_1.dens")/5.0;
+
+  if (fabs(mat) < pow(10, -4)) {printf("Ne20 state #2 -> Mg20 state #2: 2-body J=0 T=2 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/ne20_mg20_2body_J0_T2_2_2.dens")/(3.0*sqrt(5.0));
+
+  if (fabs(mat) < pow(10, -4)) {printf("Ne20 state #3 -> Mg20 state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
+  printf("\n");
+  free(sp);
+
+
   // Begin O20 -> Ne20 Tests
   
   sp = read_parameter_file("../examples/param_files/o20_ne20_2body_test_T2.param");
@@ -3062,6 +3183,190 @@ int test_suite() {
   if (fabs(mat) < pow(10, -4)) {printf("Ne20 state #3 -> O20  state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
   printf("\n");
   free(sp);
+
+  // Begin F20 -> Na20 Tests
+  
+  sp = read_parameter_file("../examples/param_files/f20_na20_2body_test_T2.param");
+  two_body_density(sp);
+
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/f20_na20_2body_J0_T2_0_0.dens");
+  if (fabs(mat - 5.0) < pow(10, -4)) {printf("F20  state #1 -> Na20 state #1: 2-body J=0 T=2 Sum Rule: Pass\n");}
+  
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/f20_na20_2body_J0_T2_1_1.dens");
+  if (fabs(mat - sqrt(35.0)) < pow(10, -4)) {printf("F20  state #2 -> Na20 state #2: 2-body J=0 T=2 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/f20_na20_2body_J0_T2_2_2.dens");
+  if (fabs(mat - 3.0*sqrt(5.0)) < pow(10, -4)) {printf("F20  state #3 -> Na20 state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  printf("\n");
+  free(sp);
+
+  // Begin Na20 -> F20 Tests
+  
+  sp = read_parameter_file("../examples/param_files/na20_f20_2body_test_T2.param");
+  two_body_density(sp);
+
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/na20_f20_2body_J0_T2_0_0.dens");
+  if (fabs(mat - 5.0) < pow(10, -4)) {printf("Na20 state #1 -> F20  state #1: 2-body J=0 T=2 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/na20_f20_2body_J0_T2_1_1.dens");
+  if (fabs(mat - sqrt(35.0)) < pow(10, -4)) {printf("Na20 state #2 -> F20  state #2: 2-body J=0 T=2 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T2_sum_rule("../examples/output/na20_f20_2body_J0_T2_2_2.dens");
+  if (fabs(mat - 3.0*sqrt(5.0)) < pow(10, -4)) {printf("Na20 state #3 -> F20  state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  printf("\n");
+  free(sp);
+
+  // Begin Al27 -> Si27 Tests
+
+  // One-body tests
+
+  sp = read_parameter_file("../examples/param_files/al27_si27_1body_test.param");
+  one_body_density(sp);
+  
+  in_file = fopen("../examples/output/al27_si27_1body_0_0.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Jf + 1.0)*(Tf + 1.0));
+  if (fabs(mat + sqrt(3.0)) > pow(10, -4)) {pass = 0;} else {
+  printf("Al27 state #1 -> Si27  state #1: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  in_file = fopen("../examples/output/al27_si27_1body_1_1.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat + sqrt(3.0)) > pow(10, -4)) {pass = 0;} else {
+  printf("Al27 state #2 -> Si27  state #2: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  in_file = fopen("../examples/output/al27_si27_1body_2_2.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat + sqrt(3.0)) > pow(10, -4)) {pass = 0;} else {
+  printf("Al27 state #3 -> Si27  state #3: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  printf("\n");
+  free(sp);
+
+  // Two-body tests
+  sp = read_parameter_file("../examples/param_files/al27_si27_2body_test_T1.param");
+  two_body_density(sp);
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/al27_si27_2body_J0_T1_0_0.dens")/6.0;
+  if (fabs(mat - 10.0) < pow(10, -4)) {printf("Al27 state #1 -> Si27 state #1: 2-body J=0 T=2 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/al27_si27_2body_J0_T1_1_1.dens")/(2*sqrt(3.0));
+  if (fabs(mat - 10.0) < pow(10, -4)) {printf("Al27 state #2 -> Si27 state #2: 2-body J=0 T=2 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/al27_si27_2body_J0_T1_2_2.dens")/(2*sqrt(6.0));
+  if (fabs(mat - 10.0) < pow(10, -4)) {printf("Al27 state #3 -> Si27 state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
+  
+  printf("\n");
+  free(sp);
+
+  // Begin Si27 -> Al27 Tests
+
+  // One-body tests
+
+  sp = read_parameter_file("../examples/param_files/si27_al27_1body_test.param");
+  one_body_density(sp);
+  
+  in_file = fopen("../examples/output/si27_al27_1body_0_0.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Jf + 1.0)*(Tf + 1.0));
+  if (fabs(mat + sqrt(3.0)) > pow(10, -4)) {pass = 0;} else {
+  printf("Si27 state #1 -> Al27  state #1: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  in_file = fopen("../examples/output/si27_al27_1body_1_1.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat + sqrt(3.0)) > pow(10, -4)) {pass = 0;} else {
+  printf("Si27 state #2 -> Al27  state #2: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  in_file = fopen("../examples/output/si27_al27_1body_2_2.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat + sqrt(3.0)) > pow(10, -4)) {pass = 0;} else {
+  printf("Si27 state #3 -> Al27  state #3: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  printf("\n");
+  free(sp);
+
+  // Two-body tests
+  sp = read_parameter_file("../examples/param_files/si27_al27_2body_test_T1.param");
+  two_body_density(sp);
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/si27_al27_2body_J0_T1_0_0.dens")/6.0;
+  if (fabs(mat - 10.0) < pow(10, -4)) {printf("Si27 state #1 -> Al27 state #1: 2-body J=0 T=2 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/si27_al27_2body_J0_T1_1_1.dens")/(2*sqrt(3.0));
+  if (fabs(mat - 10.0) < pow(10, -4)) {printf("Si27 state #2 -> Al27 state #2: 2-body J=0 T=2 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/si27_al27_2body_J0_T1_2_2.dens")/(2*sqrt(6.0));
+  if (fabs(mat - 10.0) < pow(10, -4)) {printf("Si27 state #3 -> Al27 state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
+  
+  printf("\n");
+  free(sp);
+
+
+  // Begin Al27 -> Mg27 Tests
+
+  // One-body tests
+
+  sp = read_parameter_file("../examples/param_files/al27_mg27_1body_test.param");
+  one_body_density(sp);
+  
+  in_file = fopen("../examples/output/al27_mg27_1body_0_0.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Jf + 1.0)*(Tf + 1.0));
+  printf("Al Mat: %g\n", mat);
+  if (fabs(mat) > pow(10, -4)) {pass = 0;} else {
+  printf("Ne20 state #2 -> F20  state #1: 1-body J=0 T=1 sum rule: Pass\n");}
+  in_file = fopen("../examples/output/al27_mg27_1body_0_1.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  printf("Al Mat: %g\n", mat);
+  if (fabs(mat) > pow(10, -4)) {pass = 0;} else {
+  printf("Ne20 state #3 -> F20  state #3: 1-body J=0 T=1 sum rule: Pass\n");}
+  printf("\n");
 
 
   return pass;
