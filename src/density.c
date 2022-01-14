@@ -3218,6 +3218,224 @@ int test_suite() {
   printf("\n");
   free(sp);
 
+  // Begin Al27 -> Al27 tests
+
+  sp = read_parameter_file("../examples/param_files/al27_al27_1body_test.param");
+  one_body_density(sp);
+
+  in_file = fopen("../examples/output/al27_al27_1body_0_0.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 11) > pow(10, -4)) {pass = 0;} else {
+  printf("Al27 state #1 -> Al27 state #1: 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(-sqrt(1.0/3.0));
+  if (fabs(mat + 1) > pow(10, -4)) {pass = 0;} else {
+  printf("Al27 state #1 -> Al27 state #1: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  in_file = fopen("../examples/output/al27_al27_1body_1_1.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 11) > pow(10, -4)) {pass = 0;} else {
+  printf("Al27 state #2 -> Al27 state #2: 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(-sqrt(1.0/3.0));
+  if (fabs(mat + 1) > pow(10, -4)) {pass = 0;} else {
+  printf("Al27 state #2 -> Al27 state #2: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  in_file = fopen("../examples/output/al27_al27_1body_2_2.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 11) > pow(10, -4)) {pass = 0;} else {
+  printf("Al27 state #3 -> Al27 state #3: 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(-sqrt(1.0/3.0));
+  if (fabs(mat + 1) > pow(10, -4)) {pass = 0;} else {
+  printf("Al27 state #3 -> Al27 state #3: 1-body J=0 T=1 sum rule: Pass\n");}
+  fclose(in_file);
+  printf("\n");
+
+  sp = read_parameter_file("../examples/param_files/al27_al27_2body_test_T0.param");
+  two_body_density(sp);
+  free(sp);
+  
+  sp = read_parameter_file("../examples/param_files/al27_al27_2body_test_T1.param");
+  two_body_density(sp);
+  free(sp);
+  
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/al27_al27_2body_J0_T0_0_0.dens")/(2.0*sqrt(3.0));
+  if (fabs(mat - 55) < pow(10, -4)) {printf("Al27 state #1 -> Al27 state #1: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/al27_al27_2body_J0_T1_0_0.dens")*(-1.0/6.0);
+  if (fabs(mat + 10) < pow(10, -4)) {printf("Al27 state #1 -> Al27 state #1: 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/al27_al27_2body_J0_T0_1_1.dens")/2.0;
+  if (fabs(mat - 55) < pow(10, -4)) {printf("Al27 state #2 -> Al27 state #2: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/al27_al27_2body_J0_T1_1_1.dens")*(-1.0/(2.0*sqrt(3.0)));
+  if (fabs(mat + 10) < pow(10, -4)) {printf("Al27 state #2 -> Al27 state #2: 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/al27_al27_2body_J0_T0_2_2.dens")/(2.0*sqrt(2.0));
+  if (fabs(mat - 55) < pow(10, -4)) {printf("Al27 state #3 -> Al27 state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/al27_al27_2body_J0_T1_2_2.dens")*(-1.0/(2.0*sqrt(6.0)));
+  if (fabs(mat + 10) < pow(10, -4)) {printf("Al27 state #3 -> Al27 state #3: 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  printf("\n");
+
+  // Begin Si27 -> Si27 tests
+
+  sp = read_parameter_file("../examples/param_files/si27_si27_1body_test.param");
+  one_body_density(sp);
+
+  in_file = fopen("../examples/output/si27_si27_1body_0_0.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 11) > pow(10, -4)) {pass = 0;} else {
+  printf("Si27 state #1 -> Si27 state #1: 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(sqrt(1.0/3.0));
+  if (fabs(mat - 1) > pow(10, -4)) {pass = 0;} else {
+  printf("Si27 state #1 -> Si27 state #1: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  in_file = fopen("../examples/output/si27_si27_1body_1_1.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 11) > pow(10, -4)) {pass = 0;} else {
+  printf("Si27 state #2 -> Si27 state #2: 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(sqrt(1.0/3.0));
+  if (fabs(mat - 1) > pow(10, -4)) {pass = 0;} else {
+  printf("Si27 state #2 -> Si27 state #2: 1-body J=0 T=1 sum rule: Pass\n");}
+
+  fclose(in_file);
+
+  in_file = fopen("../examples/output/si27_si27_1body_2_2.dens", "r");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 0) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(2.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0));
+  if (fabs(mat - 11) > pow(10, -4)) {pass = 0;} else {
+  printf("Si27 state #3 -> Si27 state #3: 1-body J=0 T=0 sum rule: Pass\n");}
+  fscanf(in_file, "%*d\n");
+  fscanf(in_file, "%d %d %d %d %d %d\n", &Jf, &Tf, &Ji, &Ti, &Jop, &Top);
+  if (Jop != 0 || Top != 2) {printf("Error in density matrix\n"); exit(0);}
+  mat = 0;
+  for (int i = 0; i < 3; i++) {
+   fscanf(in_file, "%d %d %d %d %f", &na, &ja, &nb, &jb, &dm);
+   mat += sqrt(6.0)*sqrt(ja + 1.0)*dm;
+  }
+  mat *= 1.0/sqrt((Ji + 1.0)*(Ti + 1.0))*(sqrt(1.0/3.0));
+  if (fabs(mat - 1) > pow(10, -4)) {pass = 0;} else {
+  printf("Si27 state #3 -> Si27 state #3: 1-body J=0 T=1 sum rule: Pass\n");}
+  fclose(in_file);
+  printf("\n");
+
+  sp = read_parameter_file("../examples/param_files/si27_si27_2body_test_T0.param");
+  two_body_density(sp);
+  free(sp);
+  
+  sp = read_parameter_file("../examples/param_files/si27_si27_2body_test_T1.param");
+  two_body_density(sp);
+  free(sp);
+  
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/si27_si27_2body_J0_T0_0_0.dens")/(2.0*sqrt(3.0));
+  if (fabs(mat - 55) < pow(10, -4)) {printf("Si27 state #1 -> Si27 state #1: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/si27_si27_2body_J0_T1_0_0.dens")*(1.0/6.0);
+  if (fabs(mat - 10) < pow(10, -4)) {printf("Si27 state #1 -> Si27 state #1: 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/si27_si27_2body_J0_T0_1_1.dens")/2.0;
+  if (fabs(mat - 55) < pow(10, -4)) {printf("Si27 state #2 -> Si27 state #2: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/si27_si27_2body_J0_T1_1_1.dens")*(1.0/(2.0*sqrt(3.0)));
+  if (fabs(mat - 10) < pow(10, -4)) {printf("Si27 state #2 -> Si27 state #2: 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T0_sum_rule("../examples/output/si27_si27_2body_J0_T0_2_2.dens")/(2.0*sqrt(2.0));
+  if (fabs(mat - 55) < pow(10, -4)) {printf("Si27 state #3 -> Si27 state #3: 2-body J=0 T=0 Sum Rule: Pass\n");}
+
+  mat = compute_2body_J0_T1_sum_rule("../examples/output/si27_si27_2body_J0_T1_2_2.dens")*(1.0/(2.0*sqrt(6.0)));
+  if (fabs(mat - 10) < pow(10, -4)) {printf("Si27 state #3 -> Si27 state #3: 2-body J=0 T=1 Sum Rule: Pass\n");}
+
+  printf("\n");
+
+
+
   // Begin Al27 -> Si27 Tests
 
   // One-body tests
