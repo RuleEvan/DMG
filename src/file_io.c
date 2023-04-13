@@ -145,10 +145,11 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   wd->e_nuc_i =  (float*) malloc(sizeof(float)*wd->n_eig_i);
   wd->j_nuc_i =  (float*) malloc(sizeof(float)*wd->n_eig_i);
   wd->t_nuc_i =  (float*) malloc(sizeof(float)*wd->n_eig_i);
-  wd->bc_i = malloc(sizeof(float)*wd->n_states_i*wd->n_eig_i);
-
+  unsigned int wave_size = wd->n_states_i*wd->n_eig_i;
+  wd->bc_i = (float*) calloc(wave_size, sizeof(float));
+  
   if (VERBOSE) {printf("Reading in initial state wavefunction coefficients\n");}
-  for (int i = 0; i < wd->n_eig_i; i++) {
+  for (unsigned int i = 0; i < wd->n_eig_i; i++) {
     fread(&junk, sizeof(int), 1, in_file);
     int vec_index;
     double total = 0.0;
@@ -162,9 +163,13 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
     int it_nuc = round(2*t_nuc);
     wd->j_nuc_i[i] = ij_nuc/2.0;
     wd->t_nuc_i[i] = it_nuc/2.0;
-    for (int j = 0; j < wd->n_states_i; j++) {
-      fread(&wd->bc_i[i + wd->n_eig_i*j], sizeof(float), 1, in_file);
-      total += pow(wd->bc_i[i + wd->n_eig_i*j], 2);
+    for (unsigned int j = 0; j < wd->n_states_i; j++) {
+      unsigned int index = i + wd->n_eig_i*j;
+      //fread(&wd->bc_i[i + wd->n_eig_i*j], sizeof(float), 1, in_file);
+     // total += pow(wd->bc_i[i + wd->n_eig_i*j], 2);
+      fread(&wd->bc_i[index], sizeof(float), 1, in_file);
+      total += pow(wd->bc_i[index], 2);
+
     }
     if (fabs(total -1.0) > pow(10, -6)) {printf("State %d not normalized: norm = %g\n", i, total); exit(0);}
   }
@@ -172,6 +177,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
   if (VERBOSE) {printf("Done.\n");
   printf("Reading in initial state basis\n");}
   in_file = fopen(basis_file_initial, "rb");
+
   fread(&junk, sizeof(int), 1, in_file);
   fread(&junk, sizeof(int), 1, in_file);
   fread(&junk, sizeof(int), 1, in_file);
@@ -193,12 +199,12 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
     fread(&j_shell, sizeof(int), 1, in_file);
     fread(&jz_shell, sizeof(int), 1, in_file);
     fread(&w_shell, sizeof(int), 1, in_file);
-
   }
-
+  
   wd->wh_hash_i = (wh_list**) calloc(wd->n_sds_p_i*HASH_SIZE, sizeof(wh_list*));
-  int pp0 = n_choose_k(wd->n_shells, wd->n_proton_i);
-  int pn0 = n_choose_k(wd->n_shells, wd->n_neutron_i);
+  unsigned int pp0 = n_choose_k(wd->n_shells, wd->n_proton_i);
+  unsigned int pn0 = n_choose_k(wd->n_shells, wd->n_neutron_i);
+  
   for (int i = 0; i < wd->n_states_i; i++) {
     int in = 0;
     int ip = 0;
@@ -215,7 +221,9 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
         in++;
       }
     }
+    //printf("%u, %u\n", pp, pn);
     unsigned int p_hash = pp + wd->n_sds_p_i*(pn % HASH_SIZE);
+    
     if (wd->wh_hash_i[p_hash] == NULL) {
       wd->wh_hash_i[p_hash] = create_wh_node(pp, pn, i, NULL);
     } else {
@@ -243,6 +251,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
     wd->t_nuc_f = wd->t_nuc_i;
     wd->bc_f = wd->bc_i;
     wd->wh_hash_f = wd->wh_hash_i;
+
   } else {
     if (VERBOSE) {printf("Initial and final bases are different.\n");}
     wd->same_basis = 0;
@@ -333,10 +342,13 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
     wd->e_nuc_f = (float*) malloc(sizeof(float)*wd->n_eig_f);
     wd->j_nuc_f = (float*) malloc(sizeof(float)*wd->n_eig_f);
     wd->t_nuc_f = (float*) malloc(sizeof(float)*wd->n_eig_f);
-    wd->bc_f = malloc(sizeof(float)*wd->n_states_f*wd->n_eig_f);
+    wave_size = wd->n_states_f*wd->n_eig_f;
+    wd->bc_f = (float*) calloc(wave_size, sizeof(float));
+
+    //wd->bc_f = malloc(sizeof(float)*wd->n_states_f*wd->n_eig_f);
 
     if (VERBOSE) {printf("Reading in final state wavefunction coefficients\n");}
-    for (int i = 0; i < wd->n_eig_f; i++) {
+    for (unsigned int i = 0; i < wd->n_eig_f; i++) {
       fread(&junk, sizeof(int), 1, in_file);
       int vec_index;
       float j_nuc, t_nuc;
@@ -350,7 +362,7 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
       int it_nuc = round(2*t_nuc);
       wd->j_nuc_f[i] = ij_nuc/2.0;
       wd->t_nuc_f[i] = it_nuc/2.0;
-      for (int j = 0; j < wd->n_states_f; j++) {
+      for (unsigned int j = 0; j < wd->n_states_f; j++) {
         fread(&wd->bc_f[i + wd->n_eig_f*j], sizeof(float), 1, in_file);
         total += pow(wd->bc_f[i + wd->n_eig_f*j], 2.0);
       }
@@ -394,7 +406,6 @@ wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char
           in++;
         }
       }
-
       unsigned int p_hash = pp + wd->n_sds_p_f*(pn % HASH_SIZE);
       if (wd->wh_hash_f[p_hash] == NULL) {
         wd->wh_hash_f[p_hash] = create_wh_node(pp, pn, i, NULL);
