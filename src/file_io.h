@@ -96,6 +96,9 @@ wh_list* wh_append(wh_list* head, unsigned int pp, unsigned int pn, unsigned int
 eigen_list* create_eigen_node(int eig_i, int eig_n, eigen_list* next);
 eigen_list* eigen_append(eigen_list* head, int eig_i, int eig_f);
 wfnData* read_binary_wfn_data(char *wfn_file_initial, char *wfn_file_final, char* basis_file_initial, char *basis_file_final);
+wfnData* read_binary_wfn_strength(char *wfn_file_initial, char *wfn_file_final, char* basis_file_initial, char *basis_file_final);
+void modify_binary_wfn_strength(char *wfn_file, float* bc_f);
+
 
 speedParams* read_parameter_file(char* parameter_file);
 #endif

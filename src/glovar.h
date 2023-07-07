@@ -4,9 +4,11 @@
 #include "stdint.h"
 #include "string.h"
 #include "time.h"
+#include <gsl/gsl_sf.h>
+
 
 // Set the size of the hash used for storing wavefunction coefficients
-#define HASH_SIZE 21269
+#define HASH_SIZE 62273
 // Choose print format for one-body density matrices
 // 0 is GLASGOW format
 // 1 is BIGSTICK format

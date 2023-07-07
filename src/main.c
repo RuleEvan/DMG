@@ -20,8 +20,9 @@ int main(int argc, char *argv[]) {
   if ((sp->n_body == 1)) {
     one_body_density(sp);
   } else if ((sp->n_body == 2)) {
-    two_body_density(sp);
+       two_body_density(sp);
   }
+//  two_body_pivot(sp);
   end = clock();
   cpu_time = ((double) (end - start))/CLOCKS_PER_SEC;
   printf("Time: %g sec\n", cpu_time);

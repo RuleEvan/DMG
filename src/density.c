@@ -130,7 +130,7 @@ if (VERBOSE) {
   int* n1_array_f = (int*) calloc(ns*n_sds_n_int1, sizeof(int));
   int* n2_array_f = (int*) calloc(ns*ns*n_sds_n_int2, sizeof(int));
 
-  if (wd->w_max_i < 0 || wd->w_max_f < 0) {if (VERBOSE) {printf("Truncation scheme detected...generating truncated jumps...\n");}
+  if (wd->w_max_i > 0 || wd->w_max_f > 0) {if (VERBOSE) {printf("Truncation scheme detected...generating truncated jumps...\n");}
     int w_min_p_i = min_w(ns, wd->n_proton_i, wd->w_shell);
     int w_min_n_i = min_w(ns, wd->n_neutron_i, wd->w_shell);
     int w_min_p_f = min_w(ns, wd->n_proton_f, wd->w_shell);
@@ -604,6 +604,7 @@ void one_body_density(speedParams* sp) {
     double mjf = 0;
     int ijf = (int) 2*jf;
     if (ijf % 2) {mjf = 0.5; mji = 0.5;}
+  //  printf("%d %d %g %g %g %g %g %g\n", psi_i, psi_f, ji, mji, jf, mjf, ti, tf);
     for (int j_op = (int) (fabs(jf - ji)); j_op <= (int) (ji + jf); j_op++) { 
       for (int t_op = MAX(0,abs(ti-tf)); t_op <= MIN(1,abs(ti+tf)); t_op++) {
 	if (fabs(mt_op) > t_op) {continue;}
@@ -701,6 +702,9 @@ void one_body_density(speedParams* sp) {
           if (wd->n_shell[b] != wd->n_orb[i_orb2]) {continue;}
           if (wd->j_shell[b]/2.0 != j2) {continue;}
           float mj2 = wd->jz_shell[b]/2.0;
+	  printf("%g %g %g %g\n", j1, mj1, j2, mj2);
+          if (mt1 - mt2 != mt_op) {continue;}
+
           for (int i = 0; i < sp->n_trans; i++) {
             density[i] = 0.0;
           }
