@@ -729,6 +729,7 @@ wfnData* read_binary_wfn_strength(char *wfn_file_initial, char *wfn_file_final, 
   fclose(in_file);
   if (VERBOSE) {printf("Done.\n");
   printf("Reading in initial state basis\n");}
+
   in_file = fopen(basis_file_initial, "rb");
 
   fread(&junk, sizeof(int), 1, in_file);
@@ -757,7 +758,6 @@ wfnData* read_binary_wfn_strength(char *wfn_file_initial, char *wfn_file_final, 
   wd->wh_hash_i = (wh_list**) calloc(wd->n_sds_p_i*HASH_SIZE, sizeof(wh_list*));
   unsigned int pp0 = n_choose_k(wd->n_shells, wd->n_proton_i);
   unsigned int pn0 = n_choose_k(wd->n_shells, wd->n_neutron_i);
-  
   for (int i = 0; i < wd->n_states_i; i++) {
     int in = 0;
     int ip = 0;

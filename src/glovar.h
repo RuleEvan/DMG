@@ -8,7 +8,7 @@
 
 
 // Set the size of the hash used for storing wavefunction coefficients
-#define HASH_SIZE 62273
+#define HASH_SIZE 29311
 // Choose print format for one-body density matrices
 // 0 is GLASGOW format
 // 1 is BIGSTICK format

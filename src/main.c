@@ -17,12 +17,12 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
   speedParams* sp = read_parameter_file(argv[1]);
-  if ((sp->n_body == 1)) {
-    one_body_density(sp);
-  } else if ((sp->n_body == 2)) {
-       two_body_density(sp);
-  }
-//  two_body_pivot(sp);
+//  if ((sp->n_body == 1)) {
+//    one_body_density(sp);
+//  } else if ((sp->n_body == 2)) {
+//       two_body_density(sp);
+//  }
+  one_body_pivot(sp);
   end = clock();
   cpu_time = ((double) (end - start))/CLOCKS_PER_SEC;
   printf("Time: %g sec\n", cpu_time);
